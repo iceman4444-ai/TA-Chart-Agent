@@ -1,0 +1,62 @@
+name: Daily TA Briefing
+
+on:
+  schedule:
+    # GitHub Actions cron is UTC only. 6:30pm America/New_York is 22:30 UTC
+    # during daylight saving time (EDT) and 23:30 UTC in winter (EST), so we
+    # trigger at both and let the guard step below keep whichever run is
+    # actually 6pm-hour Eastern. Weekdays only (1-5).
+    - cron: "30 22 * * 1-5"
+    - cron: "30 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (render charts but send no email)"
+        type: boolean
+        default: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard — only proceed when it is 6pm-hour in New York
+        id: guard
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$hour" = "18" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping: it is ${hour}:xx ET, not 18:xx (DST shoulder run)."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.go == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.go == 'true'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.guard.outputs.go == 'true'
+        run: pip install -r requirements.txt
+
+      - name: Run briefing
+        if: steps.guard.outputs.go == 'true'
+        env:
+          TA_SMTP_PASSWORD: ${{ secrets.TA_SMTP_PASSWORD }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python ta_briefing_v2.py --dry-run
+          else
+            python ta_briefing_v2.py
+          fi
+
+      - name: Upload charts as artifact
+        if: steps.guard.outputs.go == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ta-briefing-charts
+          path: output/
+          retention-days: 14

@@ -1,0 +1,44 @@
+# TA Chart Agent v2 configuration
+#
+# Everything in this file is safe to commit EXCEPT a password — the SMTP
+# password is never stored here. It is read from the TA_SMTP_PASSWORD
+# environment variable (or a GitHub Actions secret when run on a schedule).
+
+# Tickers to analyze. Any Yahoo Finance symbol works (stocks, ETFs, ^GSPC, BTC-USD, ...).
+tickers:
+  - SPY
+  - QQQ
+  - AAPL
+  - MSFT
+  - NVDA
+
+# How much daily history to fetch (calendar days). Needs to be comfortably
+# larger than the slowest indicator window so the charts have no warm-up gaps.
+lookback_days: 300
+
+# How many trading days to show on the charts.
+chart_days: 120
+
+indicators:
+  sma_fast: 20
+  sma_slow: 50
+  rsi_period: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+
+# Where charts and the email preview are written.
+output_dir: output
+
+email:
+  enabled: true
+  smtp_host: smtp.gmail.com
+  smtp_port: 587          # 587 = STARTTLS (use 465 with use_ssl: true for implicit SSL)
+  use_ssl: false
+  username: onulakjd@gmail.com
+  from_addr: onulakjd@gmail.com
+  to_addrs:
+    - onulakjd@gmail.com
+  subject_prefix: "[TA Briefing]"
+  # Password comes from the TA_SMTP_PASSWORD environment variable.
+  # For Gmail this must be an App Password, not your account password.
