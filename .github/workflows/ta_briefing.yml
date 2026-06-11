@@ -60,3 +60,4 @@ jobs:
           name: ta-briefing-charts
           path: output/
           retention-days: 14
+# vim: set ft=yaml:
