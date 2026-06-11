@@ -27,7 +27,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import matplotlib.pyplot as plt
 import mplfinance as mpf
+import numpy as np
 import pandas as pd
 import yaml
 import yfinance as yf
@@ -58,6 +60,8 @@ def add_indicators(df: pd.DataFrame, ind: dict) -> pd.DataFrame:
     close = df["Close"]
     df[f"SMA{ind['sma_fast']}"] = close.rolling(ind["sma_fast"]).mean()
     df[f"SMA{ind['sma_slow']}"] = close.rolling(ind["sma_slow"]).mean()
+    if ind.get("sma_long"):
+        df[f"SMA{ind['sma_long']}"] = close.rolling(ind["sma_long"]).mean()
 
     # Wilder's RSI
     period = ind["rsi_period"]
@@ -74,31 +78,153 @@ def add_indicators(df: pd.DataFrame, ind: dict) -> pd.DataFrame:
     return df
 
 
+FIB_RATIOS = (0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0)
+
+
+def fib_levels(plot_df: pd.DataFrame) -> dict[float, float]:
+    """Fibonacci retracement levels for the displayed window.
+
+    Anchored on the window's swing high and swing low. If the high came after
+    the low (up-leg) the retracements step down from the high; otherwise
+    (down-leg) they step up from the low.
+    """
+    hi, lo = plot_df["High"].max(), plot_df["Low"].min()
+    if plot_df["High"].idxmax() >= plot_df["Low"].idxmin():
+        return {r: hi - (hi - lo) * r for r in FIB_RATIOS}
+    return {r: lo + (hi - lo) * r for r in FIB_RATIOS}
+
+
+def find_pivots(vals: np.ndarray, kind: str, order: int = 5) -> list[int]:
+    """Indices of local swing highs ('high') or swing lows ('low')."""
+    pivots = []
+    for k in range(order, len(vals) - order):
+        window = vals[k - order : k + order + 1]
+        if kind == "high" and vals[k] >= window.max():
+            pivots.append(k)
+        elif kind == "low" and vals[k] <= window.min():
+            pivots.append(k)
+    return pivots
+
+
+def detect_trendline(plot_df: pd.DataFrame, kind: str) -> tuple[int, float, float] | None:
+    """Best-fitting resistance ('res') or support ('sup') trendline, if any.
+
+    Tries lines through every pair of swing pivots and keeps the one with the
+    most pivot touches that price has respected from the first anchor through
+    the latest bar. Returns (start_index, start_price, end_price) where the
+    end is the line's value at the last bar, or None when nothing qualifies.
+    """
+    vals = (plot_df["High"] if kind == "res" else plot_df["Low"]).to_numpy()
+    n = len(vals)
+    pivots = find_pivots(vals, "high" if kind == "res" else "low")
+    if len(pivots) < 2:
+        return None
+
+    tol = (vals.max() - vals.min()) * 0.01
+    last_close = float(plot_df["Close"].iloc[-1])
+    best, best_score = None, (0, 0)
+    for a, i in enumerate(pivots):
+        for j in pivots[a + 1 :]:
+            if j - i < n // 6:
+                continue
+            slope = (vals[j] - vals[i]) / (j - i)
+            line = vals[i] + slope * (np.arange(i, n) - i)
+            overshoot = vals[i:] - line if kind == "res" else line - vals[i:]
+            if overshoot.max() > tol * 0.5:  # price broke through the line
+                continue
+            touch_idx = [
+                p for p in pivots
+                if p >= i and abs(vals[p] - (vals[i] + slope * (p - i))) < tol
+            ]
+            # the line must still be in play: touched recently and projecting
+            # to somewhere near the current price, not drifting off-screen
+            if (
+                len(touch_idx) < 2
+                or touch_idx[-1] < n - n // 3
+                or abs(line[-1] - last_close) > last_close * 0.10
+            ):
+                continue
+            score = (len(touch_idx), n - i)  # most touches, then earliest anchor
+            if score > best_score:
+                best_score = score
+                best = (i, float(vals[i]), float(line[-1]))
+    return best
+
+
 def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_dir: Path) -> Path:
     plot_df = df.dropna(subset=[f"SMA{ind['sma_slow']}", "RSI"]).tail(chart_days)
     if plot_df.empty:
         raise RuntimeError(f"{ticker}: not enough history to plot (increase lookback_days)")
 
     fast, slow = ind["sma_fast"], ind["sma_slow"]
-    hist_colors = ["#2e7d32" if v >= 0 else "#c62828" for v in plot_df["MACDHist"]]
+    hist_colors = ["#2ebd85" if v >= 0 else "#f6465d" for v in plot_df["MACDHist"]]
     rsi_band = lambda level: pd.Series(level, index=plot_df.index)
 
     addplots = [
-        mpf.make_addplot(plot_df[f"SMA{fast}"], panel=0, color="#1565c0", width=1.0, label=f"SMA{fast}"),
-        mpf.make_addplot(plot_df[f"SMA{slow}"], panel=0, color="#ef6c00", width=1.0, label=f"SMA{slow}"),
-        mpf.make_addplot(plot_df["RSI"], panel=2, color="#6a1b9a", width=1.0, ylabel="RSI", ylim=(0, 100)),
-        mpf.make_addplot(rsi_band(70), panel=2, color="#9e9e9e", width=0.7, linestyle="--"),
-        mpf.make_addplot(rsi_band(30), panel=2, color="#9e9e9e", width=0.7, linestyle="--"),
-        mpf.make_addplot(plot_df["MACD"], panel=3, color="#1565c0", width=1.0, ylabel="MACD"),
-        mpf.make_addplot(plot_df["MACDSignal"], panel=3, color="#ef6c00", width=1.0),
+        mpf.make_addplot(plot_df[f"SMA{fast}"], panel=0, color="#e07ae0", width=1.0, label=f"SMA {fast}"),
+        mpf.make_addplot(plot_df[f"SMA{slow}"], panel=0, color="#ffa726", width=1.0, label=f"SMA {slow}"),
+        mpf.make_addplot(plot_df["RSI"], panel=2, color="#b39ddb", width=1.0, ylabel="RSI", ylim=(0, 100)),
+        mpf.make_addplot(rsi_band(70), panel=2, color="#787b86", width=0.7, linestyle="--"),
+        mpf.make_addplot(rsi_band(30), panel=2, color="#787b86", width=0.7, linestyle="--"),
+        mpf.make_addplot(plot_df["MACD"], panel=3, color="#42a5f5", width=1.0, ylabel="MACD"),
+        mpf.make_addplot(plot_df["MACDSignal"], panel=3, color="#ffa726", width=1.0),
         mpf.make_addplot(plot_df["MACDHist"], panel=3, type="bar", color=hist_colors, alpha=0.6),
     ]
+    long = ind.get("sma_long")
+    if long and f"SMA{long}" in plot_df and plot_df[f"SMA{long}"].notna().any():
+        addplots.insert(
+            2, mpf.make_addplot(plot_df[f"SMA{long}"], panel=0, color="#cdb24c", width=1.2, label=f"SMA {long}")
+        )
+
+    fib = fib_levels(plot_df) if ind.get("fibonacci", True) else {}
+
+    # Auto-drawn trendlines: descending/ascending resistance through swing
+    # highs and support through swing lows, only where price respected them.
+    tline_segs, tline_colors = [], []
+    if ind.get("trendlines", True):
+        for kind, color in (("res", "#c478f0"), ("sup", "#4aa8ff")):
+            tl = detect_trendline(plot_df, kind)
+            if tl:
+                i, y0, y1 = tl
+                tline_segs.append([(plot_df.index[i], y0), (plot_df.index[-1], y1)])
+                tline_colors.append(color)
 
     out_path = out_dir / f"{ticker.replace('^', '').replace('=', '_')}_4panel.png"
     last = plot_df.iloc[-1]
     title = f"\n{ticker}  {plot_df.index[-1]:%Y-%m-%d}  close {last['Close']:,.2f}"
-    style = mpf.make_mpf_style(base_mpf_style="yahoo", gridstyle=":", rc={"font.size": 9})
-    mpf.plot(
+    marketcolors = mpf.make_marketcolors(
+        up="#2ebd85", down="#f6465d", edge="inherit", wick="inherit", volume="inherit"
+    )
+    style = mpf.make_mpf_style(
+        base_mpf_style="nightclouds",
+        marketcolors=marketcolors,
+        facecolor="#131722",
+        figcolor="#131722",
+        edgecolor="#2a2e39",
+        gridcolor="#2a2e39",
+        gridstyle=":",
+        rc={
+            "font.size": 9,
+            "text.color": "#d1d4dc",
+            "axes.labelcolor": "#d1d4dc",
+            "xtick.color": "#d1d4dc",
+            "ytick.color": "#d1d4dc",
+        },
+    )
+    line_kwargs = {}
+    if fib:
+        line_kwargs["hlines"] = dict(
+            hlines=list(fib.values()),
+            colors=["#e3b341"] * len(fib),
+            linestyle="--",
+            linewidths=0.7,
+            alpha=0.5,
+        )
+    if tline_segs:
+        line_kwargs["alines"] = dict(
+            alines=tline_segs, colors=tline_colors, linewidths=1.3, alpha=0.9
+        )
+    fig, axes = mpf.plot(
         plot_df,
         type="candle",
         style=style,
@@ -108,8 +234,20 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
         figsize=(12, 10),
         title=title,
         tight_layout=True,
-        savefig=dict(fname=str(out_path), dpi=110),
+        returnfig=True,
+        **line_kwargs,
     )
+    price_ax = axes[0]
+    for ratio, level in fib.items():
+        price_ax.text(
+            0.995, level, f"{ratio:.1%}  {level:,.2f}",
+            transform=price_ax.get_yaxis_transform(),
+            ha="right", va="bottom", fontsize=7, color="#e3b341",
+        )
+    legend = price_ax.legend(loc="upper left", fontsize=8)
+    legend.get_frame().set_alpha(0.3)
+    fig.savefig(out_path, dpi=110)
+    plt.close(fig)
     return out_path
 
 

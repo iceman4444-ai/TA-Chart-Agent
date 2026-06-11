@@ -13,19 +13,23 @@ tickers:
   - NVDA
 
 # How much daily history to fetch (calendar days). Needs to be comfortably
-# larger than the slowest indicator window so the charts have no warm-up gaps.
-lookback_days: 300
+# larger than the slowest indicator window (SMA 200) so the charts have no
+# warm-up gaps.
+lookback_days: 500
 
 # How many trading days to show on the charts.
-chart_days: 120
+chart_days: 180
 
 indicators:
   sma_fast: 20
   sma_slow: 50
+  sma_long: 200
   rsi_period: 14
   macd_fast: 12
   macd_slow: 26
   macd_signal: 9
+  fibonacci: true   # draw Fibonacci retracement levels on the price panel
+  trendlines: true  # auto-detect support/resistance trendlines from swing pivots
 
 # Where charts and the email preview are written.
 output_dir: output

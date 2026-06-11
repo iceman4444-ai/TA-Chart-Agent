@@ -21,6 +21,8 @@ pip install -r requirements.txt
 | `lookback_days` | Calendar days of history fetched; keep well above the slowest indicator window |
 | `chart_days` | Trading days shown on each chart |
 | `indicators.*` | SMA fast/slow windows, RSI period, MACD fast/slow/signal |
+| `indicators.fibonacci` | Draw Fibonacci retracement levels (23.6/38.2/50/61.8/78.6%) on the price panel, anchored on the charted window's swing high/low |
+| `indicators.trendlines` | Auto-detect and draw support/resistance trendlines through swing pivots, only where price has respected the line |
 | `output_dir` | Where PNG charts and `email_preview.html` are written |
 | `email.smtp_host` / `smtp_port` / `use_ssl` | SMTP server; `587` + `use_ssl: false` = STARTTLS, `465` + `use_ssl: true` = implicit SSL |
 | `email.username` / `from_addr` / `to_addrs` | Login user, sender, recipients |
