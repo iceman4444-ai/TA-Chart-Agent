@@ -71,6 +71,13 @@ automatically on weekdays:
   The static `scan.universe` list is only a fallback if holdings can't be
   fetched.
 
+  Each pick in the scan email includes its bullish score, a **"Potential
+  drivers"** commentary paragraph, and recent headlines. The commentary is
+  generated from the technical signals; if an `ANTHROPIC_API_KEY` repository
+  secret is configured, Claude (claude-opus-4-8) writes richer prose that
+  weaves the technicals and headlines together — with automatic fallback to
+  the technical version on any error, so the email always goes out.
+
 GitHub cron is UTC-only, so each ET time has an EDT and an EST cron entry and
 a guard step keeps only the run that lands on the right New York hour, which
 handles daylight-saving transitions. Add the `TA_SMTP_PASSWORD` secret

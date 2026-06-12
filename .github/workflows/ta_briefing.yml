@@ -64,6 +64,8 @@ jobs:
         if: steps.guard.outputs.go == 'true'
         env:
           TA_SMTP_PASSWORD: ${{ secrets.TA_SMTP_PASSWORD }}
+          # Optional: enables Claude-written driver commentary in the scan email
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           args=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then

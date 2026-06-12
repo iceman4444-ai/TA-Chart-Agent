@@ -14,6 +14,7 @@ is never stored in config.yaml.
 """
 
 import argparse
+import json
 import os
 import smtplib
 import sys
@@ -307,6 +308,130 @@ def bullish_score(df: pd.DataFrame, ind: dict) -> float:
     return round(score, 2)
 
 
+def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
+    """Recent headlines from Yahoo Finance — potential catalysts for the move."""
+    items = []
+    try:
+        for raw in (yf.Ticker(ticker).news or [])[:limit]:
+            content = raw.get("content") or {}
+            title = content.get("title")
+            if not title:
+                continue
+            items.append({
+                "title": title,
+                "date": (content.get("pubDate") or "")[:10],
+                "source": (content.get("provider") or {}).get("displayName", ""),
+                "summary": (content.get("summary") or "")[:300],
+            })
+    except Exception as exc:
+        log(f"{ticker}: news fetch failed — {exc}")
+    return items
+
+
+def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
+    """Deterministic commentary on what is driving the bullish setup."""
+    last = df.iloc[-1]
+    close = df["Close"]
+    bits = []
+
+    above = [
+        str(n) for n in (ind["sma_fast"], ind["sma_slow"], ind.get("sma_long"))
+        if n and pd.notna(last.get(f"SMA{n}")) and last["Close"] > last[f"SMA{n}"]
+    ]
+    if above:
+        bits.append(f"price is holding above its {'/'.join(above)}-day moving averages")
+
+    bull_streak = 0
+    for positive in reversed((df["MACDHist"] > 0).tolist()):
+        if not positive:
+            break
+        bull_streak += 1
+    if bull_streak:
+        bits.append(f"MACD has been in a bullish crossover for {bull_streak} session(s)")
+
+    rsi = last["RSI"]
+    if rsi > 70:
+        bits.append(f"RSI at {rsi:.0f} signals strong momentum, though it is in overbought territory")
+    elif rsi >= 50:
+        bits.append(f"RSI at {rsi:.0f} shows momentum with room before overbought")
+
+    if len(df) > 21:
+        ret20 = (last["Close"] / close.iloc[-21] - 1) * 100
+        if abs(ret20) >= 1:
+            bits.append(f"the stock is {'up' if ret20 > 0 else 'down'} {abs(ret20):.1f}% over the past month")
+
+    window_high = df["High"].tail(120).max()
+    if last["Close"] >= window_high * 0.97:
+        bits.append("price is within 3% of its recent high")
+
+    vol_recent, vol_base = df["Volume"].tail(5).mean(), df["Volume"].tail(50).mean()
+    if vol_base and vol_recent > vol_base * 1.3:
+        bits.append(f"recent volume is running {vol_recent / vol_base - 1:.0%} above its 50-day average")
+
+    if not bits:
+        return "Mixed technical picture; see chart for details."
+    text = "; ".join(bits)
+    return text[0].upper() + text[1:] + "."
+
+
+def llm_commentary(picks: list[dict]) -> dict[str, str] | None:
+    """Claude-written driver commentary, when ANTHROPIC_API_KEY is configured.
+
+    Returns {ticker: commentary} or None, in which case the caller keeps the
+    deterministic technical commentary.
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return None
+    try:
+        import anthropic
+    except ImportError:
+        log("anthropic package not installed; using technical commentary")
+        return None
+    schema = {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "ticker": {"type": "string"},
+                        "commentary": {"type": "string"},
+                    },
+                    "required": ["ticker", "commentary"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["items"],
+        "additionalProperties": False,
+    }
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=16000,
+            thinking={"type": "adaptive"},
+            system=(
+                "You write the commentary section of a daily technical-analysis "
+                "briefing email. For each ticker, write 2-3 sentences on the "
+                "plausible drivers of its bullish price action, weaving together "
+                "the technical signals and the recent headlines provided. Ground "
+                "every claim ONLY in the provided data — do not invent facts, "
+                "numbers, or events. Plain prose, no preamble, no hype words."
+            ),
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+            messages=[{"role": "user", "content": json.dumps(picks)}],
+        )
+        text = next(b.text for b in response.content if b.type == "text")
+        result = {item["ticker"]: item["commentary"] for item in json.loads(text)["items"]}
+        log(f"Claude commentary generated for {len(result)} tickers")
+        return result
+    except Exception as exc:
+        log(f"Claude commentary unavailable, using technical commentary — {exc}")
+        return None
+
+
 def summarize(ticker: str, df: pd.DataFrame, ind: dict) -> dict:
     last, prev = df.iloc[-1], df.iloc[-2]
     slow = f"SMA{ind['sma_slow']}"
@@ -337,11 +462,26 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str, head
             f"<td>{s['rsi']} ({s['rsi_state']})</td><td>{s['macd_state']}</td>"
             f"<td>{s['trend']} {s['slow_name']}</td></tr>"
         )
-    charts = "".join(
-        f"<h3 style='font-family:sans-serif'>{t}</h3>"
-        f"<img src='cid:{cid}' width='860' style='max-width:100%'/>"
-        for t, cid in cids.items()
-    )
+    sections = []
+    for s in summaries:
+        ticker = s["ticker"]
+        heading = ticker + (f" — bullish score {s['score']}" if has_score else "")
+        block = f"<h3 style='font-family:sans-serif'>{heading}</h3>"
+        if s.get("commentary"):
+            block += (
+                "<p style='max-width:860px;font-size:14px'>"
+                f"<b>Potential drivers:</b> {s['commentary']}</p>"
+            )
+        if s.get("news"):
+            headlines = "".join(
+                f"<li>{n['title']} <span style='color:#777'>({n['source']}, {n['date']})</span></li>"
+                for n in s["news"]
+            )
+            block += f"<ul style='font-size:13px;max-width:860px'>{headlines}</ul>"
+        if ticker in cids:
+            block += f"<img src='cid:{cids[ticker]}' width='860' style='max-width:100%'/>"
+        sections.append(block)
+    charts = "".join(sections)
     score_head = "<th>Score</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
 <h2>{heading} — {summaries[0]['date']}</h2>
@@ -448,6 +588,8 @@ def main(argv: list[str] | None = None) -> int:
             summary = summarize(ticker, df, ind)
             if score is not None:
                 summary["score"] = score
+                summary["news"] = fetch_news(ticker)
+                summary["commentary"] = technical_commentary(df, ind)
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -457,6 +599,23 @@ def main(argv: list[str] | None = None) -> int:
     if not summaries:
         log("no tickers succeeded; aborting")
         return 1
+
+    if args.scan:
+        # Upgrade the deterministic commentary to Claude-written prose when an
+        # API key is configured; otherwise keep the technical version.
+        picks_context = [
+            {
+                "ticker": s["ticker"],
+                "bullish_score": s.get("score"),
+                "technicals": s.get("commentary"),
+                "headlines": s.get("news", []),
+            }
+            for s in summaries
+        ]
+        for ticker, text in (llm_commentary(picks_context) or {}).items():
+            for s in summaries:
+                if s["ticker"] == ticker:
+                    s["commentary"] = text
 
     msg = build_email(cfg, summaries, chart_paths, heading)
     if args.dry_run or not cfg["email"].get("enabled", True):
