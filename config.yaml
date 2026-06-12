@@ -34,6 +34,93 @@ indicators:
 # Where charts and the email preview are written.
 output_dir: output
 
+# Bullish scan (--scan): score the universe and email the top_n most bullish
+# charts. Run on the 5:00pm ET weekday schedule.
+#
+# The universe is resolved at runtime from the published holdings of these
+# ETFs (top ~10 per fund via Yahoo Finance, de-duplicated, US listings only).
+scan:
+  top_n: 5
+  etf_holdings:
+    - CHAT   # Roundhill Generative AI & Technology
+    - CNEQ   # Alger Concentrated Equity
+    - GRNY   # Fundstrat Granny Shots US Large Cap
+  # Optional manual additions to the resolved holdings.
+  extra_tickers: []
+  # Fallback universe, used only if no ETF holdings can be fetched.
+  universe:
+    # mega/large-cap tech
+    - AAPL
+    - MSFT
+    - NVDA
+    - GOOGL
+    - AMZN
+    - META
+    - TSLA
+    - AVGO
+    - AMD
+    - QCOM
+    - MU
+    - INTC
+    - CRM
+    - ORCL
+    - ADBE
+    - NFLX
+    - PLTR
+    - UBER
+    - SHOP
+    - NOW
+    # financials & payments
+    - JPM
+    - BAC
+    - GS
+    - MS
+    - V
+    - MA
+    - AXP
+    - PYPL
+    - COIN
+    - HOOD
+    # consumer & retail
+    - WMT
+    - COST
+    - HD
+    - NKE
+    - MCD
+    - SBUX
+    - DIS
+    - PEP
+    - KO
+    - PG
+    # healthcare
+    - UNH
+    - LLY
+    - JNJ
+    - PFE
+    - MRK
+    - ABBV
+    # energy & industrials
+    - XOM
+    - CVX
+    - COP
+    - CAT
+    - DE
+    - BA
+    - GE
+    - HON
+    - LMT
+    - RTX
+    - UPS
+    - UNP
+    # telecom & ETFs
+    - TMUS
+    - SPY
+    - QQQ
+    - IWM
+    - XLE
+    - XLF
+    - XLK
+
 email:
   enabled: true
   smtp_host: smtp.gmail.com

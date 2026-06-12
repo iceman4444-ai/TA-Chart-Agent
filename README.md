@@ -51,25 +51,39 @@ python ta_briefing_v2.py --dry-run
 # Real run (requires TA_SMTP_PASSWORD)
 python ta_briefing_v2.py
 
-# Ad-hoc ticker override
+# Bullish scan: score the scan.universe and email the top_n most bullish charts
+python ta_briefing_v2.py --scan
+
+# Ad-hoc ticker override (works with or without --scan)
 python ta_briefing_v2.py --dry-run --tickers TSLA AMD
 ```
 
-## Scheduling — 6:30pm ET weekdays
+## Scheduling — weekdays, 9:00am & 5:00pm ET
 
-The committed workflow `.github/workflows/ta_briefing.yml` runs the briefing
-automatically. GitHub cron is UTC-only, so it fires at both 22:30 and 23:30
-UTC on weekdays and a guard step keeps only the run that lands in the 6pm
-hour in `America/New_York`, which handles daylight-saving transitions.
-Add the `TA_SMTP_PASSWORD` secret (above) and it is live; you can also
-trigger it manually from the Actions tab (with an optional dry-run flag).
+The committed workflow `.github/workflows/ta_briefing.yml` runs two briefings
+automatically on weekdays:
 
-To run it from your own machine instead, add this crontab entry
+- **9:00am ET** — the watchlist briefing (`tickers` in config.yaml)
+- **5:00pm ET** — the bullish scan: builds its universe from the published
+  holdings of the ETFs in `scan.etf_holdings` (CHAT, CNEQ, GRNY — top ~10
+  per fund via Yahoo Finance, US listings only, plus `scan.extra_tickers`),
+  scores every symbol, and emails the `scan.top_n` most bullish charts.
+  The static `scan.universe` list is only a fallback if holdings can't be
+  fetched.
+
+GitHub cron is UTC-only, so each ET time has an EDT and an EST cron entry and
+a guard step keeps only the run that lands on the right New York hour, which
+handles daylight-saving transitions. Add the `TA_SMTP_PASSWORD` secret
+(above) and it is live; you can also trigger either mode manually from the
+Actions tab (with an optional dry-run flag).
+
+To run it from your own machine instead, add these crontab entries
 (`crontab -e`):
 
 ```cron
 CRON_TZ=America/New_York
-30 18 * * 1-5 cd /path/to/TA-Chart-Agent && .venv/bin/python ta_briefing_v2.py >> briefing.log 2>&1
+0 9  * * 1-5 cd /path/to/TA-Chart-Agent && .venv/bin/python ta_briefing_v2.py >> briefing.log 2>&1
+0 17 * * 1-5 cd /path/to/TA-Chart-Agent && .venv/bin/python ta_briefing_v2.py --scan >> briefing.log 2>&1
 ```
 
 (If your cron daemon lacks `CRON_TZ` support, set the schedule in your

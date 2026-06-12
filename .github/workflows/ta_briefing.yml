@@ -2,14 +2,25 @@ name: Daily TA Briefing
 
 on:
   schedule:
-    # GitHub Actions cron is UTC only. 6:30pm America/New_York is 22:30 UTC
-    # during daylight saving time (EDT) and 23:30 UTC in winter (EST), so we
-    # trigger at both and let the guard step below keep whichever run is
-    # actually 6pm-hour Eastern. Weekdays only (1-5).
-    - cron: "30 22 * * 1-5"
-    - cron: "30 23 * * 1-5"
+    # GitHub Actions cron is UTC only, so each ET time gets two entries (EDT
+    # and EST) and the guard step below keeps only the run that lands on the
+    # right hour in America/New_York. Weekdays only (1-5).
+    #
+    # 9:00am ET — watchlist briefing
+    - cron: "0 13 * * 1-5"
+    - cron: "0 14 * * 1-5"
+    # 5:00pm ET — bullish scan (top 5 from the scan universe)
+    - cron: "0 21 * * 1-5"
+    - cron: "0 22 * * 1-5"
   workflow_dispatch:
     inputs:
+      mode:
+        description: "Which briefing to send"
+        type: choice
+        options:
+          - watchlist
+          - scan
+        default: watchlist
       dry_run:
         description: "Dry run (render charts but send no email)"
         type: boolean
@@ -19,14 +30,21 @@ jobs:
   briefing:
     runs-on: ubuntu-latest
     steps:
-      - name: Guard — only proceed when it is 6pm-hour in New York
+      - name: Guard — pick mode from the New York hour
         id: guard
         run: |
           hour=$(TZ=America/New_York date +%H)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$hour" = "18" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "$hour" = "09" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+            echo "mode=watchlist" >> "$GITHUB_OUTPUT"
+          elif [ "$hour" = "17" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+            echo "mode=scan" >> "$GITHUB_OUTPUT"
           else
-            echo "Skipping: it is ${hour}:xx ET, not 18:xx (DST shoulder run)."
+            echo "Skipping: it is ${hour}:xx ET (DST shoulder run)."
           fi
 
       - uses: actions/checkout@v4
@@ -47,10 +65,14 @@ jobs:
         env:
           TA_SMTP_PASSWORD: ${{ secrets.TA_SMTP_PASSWORD }}
         run: |
+          args=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            python ta_briefing_v2.py --dry-run
+            args="--dry-run"
+          fi
+          if [ "${{ steps.guard.outputs.mode }}" = "scan" ]; then
+            python ta_briefing_v2.py --scan $args
           else
-            python ta_briefing_v2.py
+            python ta_briefing_v2.py $args
           fi
 
       - name: Upload charts as artifact

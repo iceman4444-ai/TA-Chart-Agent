@@ -251,6 +251,62 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
     return out_path
 
 
+def resolve_universe(scan_cfg: dict) -> list[str]:
+    """Build the scan universe from the configured ETFs' published holdings.
+
+    Yahoo exposes roughly the top ten holdings per fund. Non-US listings
+    (suffixed symbols like 005930.KS) are skipped. Falls back to the static
+    `universe` list when no holdings can be fetched.
+    """
+    tickers: dict[str, None] = {}  # insertion-ordered de-dup
+    for etf in scan_cfg.get("etf_holdings", []):
+        try:
+            holdings = yf.Ticker(etf).funds_data.top_holdings
+            symbols = [s for s in holdings.index if "." not in s]
+            log(f"{etf}: {len(symbols)} US-listed holdings: {', '.join(symbols)}")
+            tickers.update(dict.fromkeys(symbols))
+        except Exception as exc:
+            log(f"{etf}: holdings fetch failed — {exc}")
+    tickers.update(dict.fromkeys(scan_cfg.get("extra_tickers", [])))
+    if not tickers:
+        log("no ETF holdings resolved; falling back to the static universe")
+        tickers.update(dict.fromkeys(scan_cfg.get("universe", [])))
+    return list(tickers)
+
+
+def bullish_score(df: pd.DataFrame, ind: dict) -> float:
+    """Composite bullishness score (roughly 0-12, higher is more bullish).
+
+    Rewards trend alignment (close > SMA fast > SMA slow, above SMA long),
+    bullish MACD with a rising histogram, RSI in the 50-70 momentum zone
+    (penalizing overbought >75), and 20-day momentum capped at +/-3.
+    """
+    last = df.iloc[-1]
+    fast, slow = f"SMA{ind['sma_fast']}", f"SMA{ind['sma_slow']}"
+    score = 0.0
+    if last["Close"] > last[fast]:
+        score += 2
+    if last[fast] > last[slow]:
+        score += 2
+    long = ind.get("sma_long")
+    if long and pd.notna(last.get(f"SMA{long}")) and last["Close"] > last[f"SMA{long}"]:
+        score += 1
+    if last["MACD"] > last["MACDSignal"]:
+        score += 2
+    hist = df["MACDHist"].tail(3)
+    if len(hist) == 3 and hist.is_monotonic_increasing:
+        score += 1
+    rsi = last["RSI"]
+    if 50 <= rsi <= 70:
+        score += 1
+    elif rsi > 75:
+        score -= 1
+    if len(df) > 21:
+        ret20 = (last["Close"] / df["Close"].iloc[-21] - 1) * 100
+        score += max(-3.0, min(3.0, ret20 * 0.1))
+    return round(score, 2)
+
+
 def summarize(ticker: str, df: pd.DataFrame, ind: dict) -> dict:
     last, prev = df.iloc[-1], df.iloc[-2]
     slow = f"SMA{ind['sma_slow']}"
@@ -268,13 +324,15 @@ def summarize(ticker: str, df: pd.DataFrame, ind: dict) -> dict:
     }
 
 
-def build_html(summaries: list[dict], cids: dict[str, str], generated: str) -> str:
+def build_html(summaries: list[dict], cids: dict[str, str], generated: str, heading: str) -> str:
+    has_score = "score" in summaries[0]
     rows = []
     for s in summaries:
         chg = s["change_pct"]
         color = "#2e7d32" if chg >= 0 else "#c62828"
+        score_cell = f"<td><b>{s['score']}</b></td>" if has_score else ""
         rows.append(
-            f"<tr><td><b>{s['ticker']}</b></td><td>{s['close']}</td>"
+            f"<tr><td><b>{s['ticker']}</b></td>{score_cell}<td>{s['close']}</td>"
             f"<td style='color:{color}'>{chg:+.2f}%</td>"
             f"<td>{s['rsi']} ({s['rsi_state']})</td><td>{s['macd_state']}</td>"
             f"<td>{s['trend']} {s['slow_name']}</td></tr>"
@@ -284,10 +342,11 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str) -> s
         f"<img src='cid:{cid}' width='860' style='max-width:100%'/>"
         for t, cid in cids.items()
     )
+    score_head = "<th>Score</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
-<h2>Daily TA Briefing — {summaries[0]['date']}</h2>
+<h2>{heading} — {summaries[0]['date']}</h2>
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px">
-<tr style="background:#eceff1"><th>Ticker</th><th>Close</th><th>1d %</th>
+<tr style="background:#eceff1"><th>Ticker</th>{score_head}<th>Close</th><th>1d %</th>
 <th>RSI(14)</th><th>MACD</th><th>Trend</th></tr>
 {''.join(rows)}
 </table>
@@ -297,17 +356,19 @@ Not investment advice.</p>
 </body></html>"""
 
 
-def build_email(cfg: dict, summaries: list[dict], chart_paths: dict[str, Path]) -> EmailMessage:
+def build_email(
+    cfg: dict, summaries: list[dict], chart_paths: dict[str, Path], heading: str
+) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
-    msg["Subject"] = f"{email_cfg['subject_prefix']} {summaries[0]['date']}"
+    msg["Subject"] = f"{email_cfg['subject_prefix']} {heading} {summaries[0]['date']}"
     msg["From"] = email_cfg["from_addr"]
     msg["To"] = ", ".join(email_cfg["to_addrs"])
     msg.set_content("Your email client does not support HTML. See attached charts.")
 
     cids = {t: make_msgid(domain="ta-chart-agent")[1:-1] for t in chart_paths}
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
-    msg.add_alternative(build_html(summaries, cids, generated), subtype="html")
+    msg.add_alternative(build_html(summaries, cids, generated, heading), subtype="html")
     for ticker, path in chart_paths.items():
         msg.get_payload()[1].add_related(
             path.read_bytes(), maintype="image", subtype="png", cid=f"<{cids[ticker]}>"
@@ -339,6 +400,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", default="config.yaml", type=Path)
     parser.add_argument("--tickers", nargs="+", help="override the configured ticker list")
     parser.add_argument(
+        "--scan",
+        action="store_true",
+        help="scan the configured universe and email the most bullish charts",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="fetch data and render charts + email preview, but send nothing",
@@ -346,18 +412,43 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
-    tickers = args.tickers or cfg["tickers"]
     ind = cfg["indicators"]
     out_dir = Path(cfg["output_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    if args.scan:
+        heading = "Bullish Scan"
+        scan_cfg = cfg["scan"]
+        universe = args.tickers or resolve_universe(scan_cfg)
+        log(f"scanning {len(universe)} tickers for the {scan_cfg.get('top_n', 5)} most bullish...")
+        scored = []
+        for ticker in universe:
+            try:
+                df = add_indicators(fetch_history(ticker, cfg["lookback_days"]), ind)
+                score = bullish_score(df, ind)
+                scored.append((score, ticker, df))
+                log(f"{ticker}: score {score}")
+            except Exception as exc:
+                log(f"{ticker}: skipped — {exc}")
+        scored.sort(key=lambda item: item[0], reverse=True)
+        picks = scored[: scan_cfg.get("top_n", 5)]
+        log("top picks: " + ", ".join(f"{t} ({s})" for s, t, _ in picks))
+        candidates = [(ticker, df, score) for score, ticker, df in picks]
+    else:
+        heading = "Daily Briefing"
+        candidates = [(t, None, None) for t in (args.tickers or cfg["tickers"])]
+
     summaries, chart_paths, failures = [], {}, []
-    for ticker in tickers:
+    for ticker, df, score in candidates:
         try:
-            log(f"{ticker}: fetching {cfg['lookback_days']}d of history...")
-            df = add_indicators(fetch_history(ticker, cfg["lookback_days"]), ind)
+            if df is None:
+                log(f"{ticker}: fetching {cfg['lookback_days']}d of history...")
+                df = add_indicators(fetch_history(ticker, cfg["lookback_days"]), ind)
             chart_paths[ticker] = render_chart(ticker, df, ind, cfg["chart_days"], out_dir)
-            summaries.append(summarize(ticker, df, ind))
+            summary = summarize(ticker, df, ind)
+            if score is not None:
+                summary["score"] = score
+            summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
             failures.append(ticker)
@@ -367,14 +458,14 @@ def main(argv: list[str] | None = None) -> int:
         log("no tickers succeeded; aborting")
         return 1
 
-    msg = build_email(cfg, summaries, chart_paths)
+    msg = build_email(cfg, summaries, chart_paths, heading)
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
         # PNGs instead of cid: attachments.
         preview = out_dir / "email_preview.html"
         cids = {t: p.name for t, p in chart_paths.items()}
         generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
-        preview.write_text(build_html(summaries, cids, generated).replace("cid:", ""))
+        preview.write_text(build_html(summaries, cids, generated, heading).replace("cid:", ""))
         log(f"DRY RUN — email not sent. Preview: {preview}")
         log(f"DRY RUN — would send to: {', '.join(cfg['email']['to_addrs'])} "
             f"with subject '{msg['Subject']}'")
