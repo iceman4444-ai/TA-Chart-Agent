@@ -308,6 +308,28 @@ def bullish_score(df: pd.DataFrame, ind: dict) -> float:
     return round(score, 2)
 
 
+def support_level(df: pd.DataFrame, ind: dict) -> float | None:
+    """Nearest meaningful support below the last close.
+
+    Considers the moving averages, the Fibonacci retracement levels of the
+    recent window, and the latest swing low — support is the highest of those
+    sitting below price, i.e. the first floor the bulls need to defend.
+    """
+    last_close = float(df["Close"].iloc[-1])
+    candidates = []
+    for n in (ind["sma_fast"], ind["sma_slow"], ind.get("sma_long")):
+        col = f"SMA{n}"
+        if n and col in df and pd.notna(df[col].iloc[-1]) and df[col].iloc[-1] < last_close:
+            candidates.append(float(df[col].iloc[-1]))
+    window = df.tail(180)
+    candidates += [lvl for lvl in fib_levels(window).values() if lvl < last_close]
+    lows = window["Low"].to_numpy()
+    pivots = find_pivots(lows, "low")
+    if pivots and lows[pivots[-1]] < last_close:
+        candidates.append(float(lows[pivots[-1]]))
+    return max(candidates) if candidates else None
+
+
 def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     """Recent headlines from Yahoo Finance — potential catalysts for the move."""
     items = []
@@ -328,7 +350,7 @@ def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     return items
 
 
-def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
+def technical_commentary(df: pd.DataFrame, ind: dict, support: float | None = None) -> str:
     """Deterministic commentary on what is driving the bullish setup."""
     last = df.iloc[-1]
     close = df["Close"]
@@ -369,9 +391,16 @@ def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
         bits.append(f"recent volume is running {vol_recent / vol_base - 1:.0%} above its 50-day average")
 
     if not bits:
-        return "Mixed technical picture; see chart for details."
-    text = "; ".join(bits)
-    return text[0].upper() + text[1:] + "."
+        text = "Mixed technical picture; see chart for details."
+    else:
+        text = "; ".join(bits)
+        text = text[0].upper() + text[1:] + "."
+    if support:
+        text += (
+            f" Actionable: the bullish setup holds while price stays above support near"
+            f" {support:,.2f} — a decisive close below that level would break the trend."
+        )
+    return text
 
 
 def llm_commentary(picks: list[dict]) -> dict[str, str] | None:
@@ -416,9 +445,16 @@ def llm_commentary(picks: list[dict]) -> dict[str, str] | None:
                 "You write the commentary section of a daily technical-analysis "
                 "briefing email. For each ticker, write 2-3 sentences on the "
                 "plausible drivers of its bullish price action, weaving together "
-                "the technical signals and the recent headlines provided. Ground "
-                "every claim ONLY in the provided data — do not invent facts, "
-                "numbers, or events. Plain prose, no preamble, no hype words."
+                "the technical signals and the recent headlines provided. Then "
+                "end with one actionable sentence using the provided "
+                "support_level: frame the setup as constructive while price "
+                "holds above that support (entries on strength or on pullbacks "
+                "toward it), and state explicitly that a decisive close below "
+                "the support level breaks the bullish trend. Use the exact "
+                "support number provided. Ground every claim ONLY in the "
+                "provided data — do not invent facts, numbers, or events. "
+                "These are levels to watch, not personalized financial advice. "
+                "Plain prose, no preamble, no hype words."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
             messages=[{"role": "user", "content": json.dumps(picks)}],
@@ -456,6 +492,9 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str, head
         chg = s["change_pct"]
         color = "#2e7d32" if chg >= 0 else "#c62828"
         score_cell = f"<td><b>{s['score']}</b></td>" if has_score else ""
+        if has_score:
+            support = s.get("support")
+            score_cell += f"<td>{support:,.2f}</td>" if support else "<td>—</td>"
         rows.append(
             f"<tr><td><b>{s['ticker']}</b></td>{score_cell}<td>{s['close']}</td>"
             f"<td style='color:{color}'>{chg:+.2f}%</td>"
@@ -482,7 +521,7 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str, head
             block += f"<img src='cid:{cids[ticker]}' width='860' style='max-width:100%'/>"
         sections.append(block)
     charts = "".join(sections)
-    score_head = "<th>Score</th>" if has_score else ""
+    score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
 <h2>{heading} — {summaries[0]['date']}</h2>
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px">
@@ -589,7 +628,8 @@ def main(argv: list[str] | None = None) -> int:
             if score is not None:
                 summary["score"] = score
                 summary["news"] = fetch_news(ticker)
-                summary["commentary"] = technical_commentary(df, ind)
+                summary["support"] = support_level(df, ind)
+                summary["commentary"] = technical_commentary(df, ind, summary["support"])
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -607,6 +647,8 @@ def main(argv: list[str] | None = None) -> int:
             {
                 "ticker": s["ticker"],
                 "bullish_score": s.get("score"),
+                "last_close": s["close"],
+                "support_level": s.get("support"),
                 "technicals": s.get("commentary"),
                 "headlines": s.get("news", []),
             }
