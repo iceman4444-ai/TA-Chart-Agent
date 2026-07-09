@@ -33,8 +33,8 @@ jobs:
       - name: Guard — pick mode from the New York hour
         id: guard
         run: |
-          echo "Secret TA_SMTP_PASSWORD configured: ${{ secrets.TA_SMTP_PASSWORD != '' }}"
-          echo "Secret ANTHROPIC_API_KEY configured: ${{ secrets.ANTHROPIC_API_KEY != '' }}"
+          echo "Secret GOOG configured: ${{ secrets.GOOG != '' }}"
+          echo "Secret TARECAP2 configured: ${{ secrets.TARECAP2 != '' }}"
           hour=$(TZ=America/New_York date +%H)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
@@ -65,10 +65,16 @@ jobs:
       - name: Run briefing
         if: steps.guard.outputs.go == 'true'
         env:
-          TA_SMTP_PASSWORD: ${{ secrets.TA_SMTP_PASSWORD }}
-          # Optional: enables Claude-written driver commentary in the scan email
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Repo secrets carry user-chosen names; the step below routes them
+          # by value format (Anthropic keys start with sk-ant-).
+          SECRET_A: ${{ secrets.GOOG }}
+          SECRET_B: ${{ secrets.TARECAP2 }}
         run: |
+          if [[ "$SECRET_A" == sk-ant-* ]]; then
+            export ANTHROPIC_API_KEY="$SECRET_A" TA_SMTP_PASSWORD="$SECRET_B"
+          else
+            export ANTHROPIC_API_KEY="$SECRET_B" TA_SMTP_PASSWORD="$SECRET_A"
+          fi
           args=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             args="--dry-run"
