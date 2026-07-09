@@ -33,6 +33,8 @@ jobs:
       - name: Guard — pick mode from the New York hour
         id: guard
         run: |
+          echo "Secret TA_SMTP_PASSWORD configured: ${{ secrets.TA_SMTP_PASSWORD != '' }}"
+          echo "Secret ANTHROPIC_API_KEY configured: ${{ secrets.ANTHROPIC_API_KEY != '' }}"
           hour=$(TZ=America/New_York date +%H)
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
