@@ -8,58 +8,77 @@ on:
     paths:
       - ".trigger-send"
   schedule:
-    # GitHub Actions cron is UTC only, so each ET time gets two entries (EDT
-    # and EST) and the guard step below keeps only the run that lands on the
-    # right hour in America/New_York. Weekdays only (1-5).
+    # GitHub Actions cron is UTC only, so each ET slot gets EDT and EST
+    # entries plus a late self-heal retry. GitHub can delay crons by hours,
+    # so the guard uses wide ET windows (morning 7-12, afternoon 15-21) and
+    # a .last-send marker to guarantee exactly one send per slot per day.
     #
-    # 9:00am ET — watchlist briefing
+    # Morning recap (~9:00am ET) + retry
     - cron: "0 13 * * 1-5"
     - cron: "0 14 * * 1-5"
-    # 5:00pm ET — bullish scan (top 5 from the scan universe)
+    - cron: "0 15 * * 1-5"
+    # Afternoon recap (~5:00pm ET) + retry
     - cron: "0 21 * * 1-5"
     - cron: "0 22 * * 1-5"
+    - cron: "0 23 * * 1-5"
   workflow_dispatch:
     inputs:
       mode:
         description: "Which briefing to send"
         type: choice
         options:
-          - watchlist
           - scan
-        default: watchlist
+          - watchlist
+        default: scan
       dry_run:
         description: "Dry run (render charts but send no email)"
         type: boolean
         default: false
 
+permissions:
+  contents: write  # the send marker is committed back to the branch
+
 jobs:
   briefing:
     runs-on: ubuntu-latest
     steps:
-      - name: Guard — pick mode from the New York hour
+      - uses: actions/checkout@v4
+
+      - name: Guard — decide slot and dedupe against today's sends
         id: guard
         run: |
           echo "Secret GOOG configured: ${{ secrets.GOOG != '' }}"
           echo "Secret TARECAP2 configured: ${{ secrets.TARECAP2 != '' }}"
           hour=$(TZ=America/New_York date +%H)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "mode=scan" >> "$GITHUB_OUTPUT"
-          elif [ "$hour" = "09" ]; then
-            echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "mode=scan" >> "$GITHUB_OUTPUT"
-          elif [ "$hour" = "17" ]; then
-            echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "mode=scan" >> "$GITHUB_OUTPUT"
+          today=$(TZ=America/New_York date +%F)
+          event="${{ github.event_name }}"
+          go=false
+          mode=scan
+          if [ "$hour" -lt 13 ]; then slot=morning; else slot=afternoon; fi
+          if [ "$event" = "workflow_dispatch" ]; then
+            go=true
+            mode="${{ inputs.mode }}"
+          elif [ "$event" = "push" ]; then
+            go=true
           else
-            echo "Skipping: it is ${hour}:xx ET (DST shoulder run)."
+            # Scheduled run: wide delay-tolerant windows + one-send-per-slot
+            if [ "$hour" -ge 7 ] && [ "$hour" -le 12 ]; then slot=morning
+            elif [ "$hour" -ge 15 ] && [ "$hour" -le 21 ]; then slot=afternoon
+            else slot=""; fi
+            if [ -z "$slot" ]; then
+              echo "Skipping: ${hour}:xx ET is outside the send windows."
+            elif grep -qx "$today $slot" .last-send 2>/dev/null; then
+              echo "Skipping: $slot recap already sent today."
+            else
+              go=true
+            fi
           fi
-
-      - uses: actions/checkout@v4
-        if: steps.guard.outputs.go == 'true'
+          {
+            echo "go=$go"
+            echo "mode=$mode"
+            echo "slot=$slot"
+            echo "today=$today"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-python@v5
         if: steps.guard.outputs.go == 'true'
@@ -84,7 +103,7 @@ jobs:
           else
             export ANTHROPIC_API_KEY="$SECRET_B" TA_SMTP_PASSWORD="$SECRET_A"
           fi
-          if [ "$(TZ=America/New_York date +%H)" -lt 12 ]; then
+          if [ "${{ steps.guard.outputs.slot }}" = "morning" ]; then
             label="Claude TA Morning Recap"
           else
             label="Claude TA Afternoon Recap"
@@ -98,6 +117,18 @@ jobs:
           else
             python ta_briefing_v2.py --heading "$label" $args
           fi
+
+      - name: Record send marker
+        if: steps.guard.outputs.go == 'true' && inputs.dry_run != true
+        run: |
+          echo "${{ steps.guard.outputs.today }} ${{ steps.guard.outputs.slot }}" >> .last-send
+          tail -n 14 .last-send > .last-send.tmp && mv .last-send.tmp .last-send
+          git config user.name "TA Chart Agent"
+          git config user.email "actions@github.com"
+          git add .last-send
+          git commit -m "Record ${{ steps.guard.outputs.slot }} send ${{ steps.guard.outputs.today }} [skip ci]" || exit 0
+          git pull --rebase origin "${{ github.ref_name }}" || true
+          git push origin "HEAD:${{ github.ref_name }}" || echo "::warning::marker push failed (next scheduled run may resend)"
 
       - name: Upload charts as artifact
         if: steps.guard.outputs.go == 'true'
