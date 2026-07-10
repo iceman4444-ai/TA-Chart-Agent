@@ -41,7 +41,7 @@ jobs:
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
           elif [ "$hour" = "09" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "mode=watchlist" >> "$GITHUB_OUTPUT"
+            echo "mode=scan" >> "$GITHUB_OUTPUT"
           elif [ "$hour" = "17" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
             echo "mode=scan" >> "$GITHUB_OUTPUT"
@@ -75,14 +75,19 @@ jobs:
           else
             export ANTHROPIC_API_KEY="$SECRET_B" TA_SMTP_PASSWORD="$SECRET_A"
           fi
+          if [ "$(TZ=America/New_York date +%H)" -lt 12 ]; then
+            label="Claude TA Morning Recap"
+          else
+            label="Claude TA Afternoon Recap"
+          fi
           args=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             args="--dry-run"
           fi
           if [ "${{ steps.guard.outputs.mode }}" = "scan" ]; then
-            python ta_briefing_v2.py --scan $args
+            python ta_briefing_v2.py --scan --heading "$label" $args
           else
-            python ta_briefing_v2.py $args
+            python ta_briefing_v2.py --heading "$label" $args
           fi
 
       - name: Upload charts as artifact

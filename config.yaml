@@ -45,6 +45,11 @@ scan:
     - CHAT   # Roundhill Generative AI & Technology
     - CNEQ   # Alger Concentrated Equity
     - GRNY   # Fundstrat Granny Shots US Large Cap
+  # Broad indexes scanned in full (membership via Wikipedia, since Yahoo
+  # only exposes a fund's top ~10 holdings).
+  index_universes:
+    - SPY    # S&P 500
+    - QQQ    # Nasdaq-100
   # Optional manual additions to the resolved holdings.
   extra_tickers: []
   # Fallback universe, used only if no ETF holdings can be fetched.

@@ -252,12 +252,57 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
     return out_path
 
 
-def resolve_universe(scan_cfg: dict) -> list[str]:
-    """Build the scan universe from the configured ETFs' published holdings.
+# Full index membership sources, keyed by the ETF that tracks the index.
+# Yahoo only exposes a fund's top ~10 holdings, so broad indexes are resolved
+# from these membership tables instead. Each entry is tried in order.
+INDEX_SOURCES = {
+    "SPY": [
+        ("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", "Symbol"),
+        ("https://stockanalysis.com/list/sp-500-stocks/", "Symbol"),
+    ],
+    "QQQ": [
+        ("https://stockanalysis.com/list/nasdaq-100-stocks/", "Symbol"),
+        ("https://en.wikipedia.org/wiki/Nasdaq-100", "Ticker"),
+    ],
+}
 
-    Yahoo exposes roughly the top ten holdings per fund. Non-US listings
-    (suffixed symbols like 005930.KS) are skipped. Falls back to the static
-    `universe` list when no holdings can be fetched.
+
+def index_members(etf: str) -> list[str]:
+    """Full membership of the index tracked by `etf` (SPY/QQQ)."""
+    import io
+
+    import requests
+
+    errors = []
+    for url, column in INDEX_SOURCES[etf]:
+        try:
+            resp = requests.get(  # some sources 403 the default python agent
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (TA-Chart-Agent briefing bot)"},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            for table in pd.read_html(io.StringIO(resp.text)):
+                if column in table.columns and len(table) > 50:
+                    symbols = [
+                        str(s).strip().replace(".", "-")  # BRK.B -> BRK-B (Yahoo style)
+                        for s in table[column].tolist()
+                    ]
+                    return [s for s in symbols if s and s.lower() != "nan"]
+            errors.append(f"{url}: no '{column}' table")
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+    raise RuntimeError("; ".join(errors))
+
+
+def resolve_universe(scan_cfg: dict) -> list[str]:
+    """Build the scan universe.
+
+    Union of: the configured ETFs' published top holdings (Yahoo exposes
+    roughly ten per fund; non-US listings like 005930.KS are skipped), the
+    full membership of the configured index universes (S&P 500 / Nasdaq-100
+    via Wikipedia), and any extra_tickers. Falls back to the static
+    `universe` list when nothing can be fetched.
     """
     tickers: dict[str, None] = {}  # insertion-ordered de-dup
     for etf in scan_cfg.get("etf_holdings", []):
@@ -268,6 +313,13 @@ def resolve_universe(scan_cfg: dict) -> list[str]:
             tickers.update(dict.fromkeys(symbols))
         except Exception as exc:
             log(f"{etf}: holdings fetch failed — {exc}")
+    for etf in scan_cfg.get("index_universes", []):
+        try:
+            members = index_members(etf)
+            log(f"{etf}: {len(members)} index members")
+            tickers.update(dict.fromkeys(members))
+        except Exception as exc:
+            log(f"{etf}: index membership fetch failed — {exc}")
     tickers.update(dict.fromkeys(scan_cfg.get("extra_tickers", [])))
     if not tickers:
         log("no ETF holdings resolved; falling back to the static universe")
@@ -584,6 +636,10 @@ def main(argv: list[str] | None = None) -> int:
         help="scan the configured universe and email the most bullish charts",
     )
     parser.add_argument(
+        "--heading",
+        help="override the email subject/heading (e.g. 'Claude TA Morning Recap')",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="fetch data and render charts + email preview, but send nothing",
@@ -596,7 +652,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if args.scan:
-        heading = "Claude TA Afternoon Recap"
+        heading = args.heading or "Claude TA Afternoon Recap"
         scan_cfg = cfg["scan"]
         universe = args.tickers or resolve_universe(scan_cfg)
         log(f"scanning {len(universe)} tickers for the {scan_cfg.get('top_n', 5)} most bullish...")
@@ -614,7 +670,7 @@ def main(argv: list[str] | None = None) -> int:
         log("top picks: " + ", ".join(f"{t} ({s})" for s, t, _ in picks))
         candidates = [(ticker, df, score) for score, ticker, df in picks]
     else:
-        heading = "Claude TA Morning Recap"
+        heading = args.heading or "Claude TA Morning Recap"
         candidates = [(t, None, None) for t in (args.tickers or cfg["tickers"])]
 
     summaries, chart_paths, failures = [], {}, []

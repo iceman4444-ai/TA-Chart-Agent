@@ -63,15 +63,18 @@ python ta_briefing_v2.py --dry-run --tickers TSLA AMD
 The committed workflow `.github/workflows/ta_briefing.yml` runs two briefings
 automatically on weekdays:
 
-- **9:00am ET** — subject **"Claude TA Morning Recap — \<date\>"**: the
-  watchlist briefing (`tickers` in config.yaml)
-- **5:00pm ET** — subject **"Claude TA Afternoon Recap — \<date\>"**: the
-  bullish scan: builds its universe from the published
-  holdings of the ETFs in `scan.etf_holdings` (CHAT, CNEQ, GRNY — top ~10
-  per fund via Yahoo Finance, US listings only, plus `scan.extra_tickers`),
-  scores every symbol, and emails the `scan.top_n` most bullish charts.
-  The static `scan.universe` list is only a fallback if holdings can't be
-  fetched.
+- **9:00am ET** — subject **"Claude TA Morning Recap — \<date\>"**
+- **5:00pm ET** — subject **"Claude TA Afternoon Recap — \<date\>"**
+
+Both are bullish scans over the same universe: the published holdings of
+the ETFs in `scan.etf_holdings` (CHAT, CNEQ, GRNY — top ~10 per fund via
+Yahoo Finance, US listings only), the **full membership** of the indexes in
+`scan.index_universes` (S&P 500 and Nasdaq-100, via Wikipedia), and any
+`scan.extra_tickers` — roughly 540 unique names. Every symbol is scored
+and the `scan.top_n` most bullish make the email. The static
+`scan.universe` list is only a fallback if nothing can be fetched.
+(The old fixed-watchlist mode is still available via manual dispatch with
+mode `watchlist`, using the `tickers` list.)
 
   Each pick in the scan email includes its bullish score, a **"Potential
   drivers"** commentary paragraph, and recent headlines. The commentary is
