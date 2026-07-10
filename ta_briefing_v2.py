@@ -382,6 +382,59 @@ def support_level(df: pd.DataFrame, ind: dict) -> float | None:
     return max(candidates) if candidates else None
 
 
+def fetch_research_notes(cfg: dict) -> list[dict]:
+    """Recent research newsletters pulled from the Gmail inbox via IMAP.
+
+    Uses the same account and app password as sending. The Gmail search query
+    (config: research.gmail_search) selects the source — e.g. TMT Breakout
+    issues — and the excerpts are handed to Claude as analysis context.
+    Failures are logged and skipped; the briefing never blocks on this.
+    """
+    import html as html_lib
+    import imaplib
+    import re
+    from email import message_from_bytes, policy
+
+    research = cfg.get("research") or {}
+    if not research.get("enabled"):
+        return []
+    password = os.environ.get("TA_SMTP_PASSWORD")
+    if not password:
+        log("research: TA_SMTP_PASSWORD not set; skipping inbox research")
+        return []
+
+    query = research.get("gmail_search", "TMT Breakout newer_than:10d")
+    max_items = research.get("max_items", 3)
+    max_chars = research.get("max_chars", 4000)
+    notes = []
+    try:
+        imap = imaplib.IMAP4_SSL(research.get("imap_host", "imap.gmail.com"), 993)
+        imap.login(cfg["email"]["username"], password)
+        imap.select('"[Gmail]/All Mail"', readonly=True)
+        _, data = imap.search(None, "X-GM-RAW", f'"{query}"')
+        ids = (data[0] or b"").split()
+        for mid in reversed(ids[-max_items:]):  # newest first
+            _, msg_data = imap.fetch(mid, "(RFC822)")
+            msg = message_from_bytes(msg_data[0][1], policy=policy.default)
+            body = msg.get_body(preferencelist=("plain", "html"))
+            text = body.get_content() if body else ""
+            if body is not None and body.get_content_type() == "text/html":
+                text = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", text)
+                text = html_lib.unescape(re.sub(r"<[^>]+>", " ", text))
+            text = re.sub(r"\s+", " ", text).strip()
+            if text:
+                notes.append({
+                    "subject": str(msg["Subject"]),
+                    "date": str(msg["Date"]),
+                    "excerpt": text[:max_chars],
+                })
+        imap.logout()
+        log(f"research: loaded {len(notes)} note(s) matching '{query}'")
+    except Exception as exc:
+        log(f"research: inbox fetch failed — {exc}")
+    return notes
+
+
 def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     """Recent headlines from Yahoo Finance — potential catalysts for the move."""
     items = []
@@ -455,7 +508,7 @@ def technical_commentary(df: pd.DataFrame, ind: dict, support: float | None = No
     return text
 
 
-def llm_commentary(picks: list[dict]) -> dict[str, str] | None:
+def llm_commentary(picks: list[dict], research_notes: list[dict] | None = None) -> dict[str, str] | None:
     """Claude-written driver commentary, when ANTHROPIC_API_KEY is configured.
 
     Returns {ticker: commentary} or None, in which case the caller keeps the
@@ -503,13 +556,24 @@ def llm_commentary(picks: list[dict]) -> dict[str, str] | None:
                 "holds above that support (entries on strength or on pullbacks "
                 "toward it), and state explicitly that a decisive close below "
                 "the support level breaks the bullish trend. Use the exact "
-                "support number provided. Ground every claim ONLY in the "
-                "provided data — do not invent facts, numbers, or events. "
-                "These are levels to watch, not personalized financial advice. "
-                "Plain prose, no preamble, no hype words."
+                "support number provided. The input may include research_notes "
+                "— excerpts from newsletters the user subscribes to (e.g. TMT "
+                "Breakout). Treat them as an analyst's view: when a note "
+                "discusses one of the tickers or a clearly relevant theme, "
+                "weave that perspective in with attribution (e.g. 'TMT "
+                "Breakout flags...'); silently ignore notes irrelevant to a "
+                "pick. Ground every claim ONLY in the provided data — do not "
+                "invent facts, numbers, or events. These are levels to watch, "
+                "not personalized financial advice. Plain prose, no preamble, "
+                "no hype words."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
-            messages=[{"role": "user", "content": json.dumps(picks)}],
+            messages=[{
+                "role": "user",
+                "content": json.dumps(
+                    {"picks": picks, "research_notes": research_notes or []}
+                ),
+            }],
         )
         text = next(b.text for b in response.content if b.type == "text")
         result = {item["ticker"]: item["commentary"] for item in json.loads(text)["items"]}
@@ -710,7 +774,8 @@ def main(argv: list[str] | None = None) -> int:
             }
             for s in summaries
         ]
-        for ticker, text in (llm_commentary(picks_context) or {}).items():
+        research_notes = fetch_research_notes(cfg)
+        for ticker, text in (llm_commentary(picks_context, research_notes) or {}).items():
             for s in summaries:
                 if s["ticker"] == ticker:
                     s["commentary"] = text

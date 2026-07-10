@@ -34,6 +34,16 @@ indicators:
 # Where charts and the email preview are written.
 output_dir: output
 
+# Research inbox: recent newsletters pulled from the Gmail account (same app
+# password used for sending, via IMAP) and given to Claude as additional
+# context when writing the scan commentary.
+research:
+  enabled: true
+  imap_host: imap.gmail.com
+  gmail_search: "TMT Breakout newer_than:10d"
+  max_items: 3     # newest matching messages to include
+  max_chars: 4000  # excerpt length per message
+
 # Bullish scan (--scan): score the universe and email the top_n most bullish
 # charts. Run on the 5:00pm ET weekday schedule.
 #

@@ -76,6 +76,13 @@ and the `scan.top_n` most bullish make the email. The static
 (The old fixed-watchlist mode is still available via manual dispatch with
 mode `watchlist`, using the `tickers` list.)
 
+  When `research.enabled` is on, the scan also pulls the newest messages
+  matching `research.gmail_search` (default: TMT Breakout issues from the
+  last 10 days) from the Gmail inbox via IMAP — same app password as
+  sending — and hands the excerpts to Claude as analyst context. Notes that
+  mention a pick or a relevant theme are woven into the commentary with
+  attribution; irrelevant notes are ignored.
+
   Each pick in the scan email includes its bullish score, a **"Potential
   drivers"** commentary paragraph, and recent headlines. The commentary is
   generated from the technical signals; if an `ANTHROPIC_API_KEY` repository
