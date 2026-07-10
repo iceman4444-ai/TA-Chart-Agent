@@ -63,8 +63,10 @@ python ta_briefing_v2.py --dry-run --tickers TSLA AMD
 The committed workflow `.github/workflows/ta_briefing.yml` runs two briefings
 automatically on weekdays:
 
-- **9:00am ET** — the watchlist briefing (`tickers` in config.yaml)
-- **5:00pm ET** — the bullish scan: builds its universe from the published
+- **9:00am ET** — subject **"Claude TA Morning Recap — \<date\>"**: the
+  watchlist briefing (`tickers` in config.yaml)
+- **5:00pm ET** — subject **"Claude TA Afternoon Recap — \<date\>"**: the
+  bullish scan: builds its universe from the published
   holdings of the ETFs in `scan.etf_holdings` (CHAT, CNEQ, GRNY — top ~10
   per fund via Yahoo Finance, US listings only, plus `scan.extra_tickers`),
   scores every symbol, and emails the `scan.top_n` most bullish charts.

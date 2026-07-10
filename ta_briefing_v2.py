@@ -540,7 +540,7 @@ def build_email(
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
-    msg["Subject"] = f"{email_cfg['subject_prefix']} {heading} {summaries[0]['date']}"
+    msg["Subject"] = f"{heading} — {datetime.now(EASTERN):%Y-%m-%d}"
     msg["From"] = email_cfg["from_addr"]
     msg["To"] = ", ".join(email_cfg["to_addrs"])
     msg.set_content("Your email client does not support HTML. See attached charts.")
@@ -596,7 +596,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if args.scan:
-        heading = "Bullish Scan"
+        heading = "Claude TA Afternoon Recap"
         scan_cfg = cfg["scan"]
         universe = args.tickers or resolve_universe(scan_cfg)
         log(f"scanning {len(universe)} tickers for the {scan_cfg.get('top_n', 5)} most bullish...")
@@ -614,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
         log("top picks: " + ", ".join(f"{t} ({s})" for s, t, _ in picks))
         candidates = [(ticker, df, score) for score, ticker, df in picks]
     else:
-        heading = "Daily Briefing"
+        heading = "Claude TA Morning Recap"
         candidates = [(t, None, None) for t in (args.tickers or cfg["tickers"])]
 
     summaries, chart_paths, failures = [], {}, []
