@@ -1,6 +1,12 @@
 name: Daily TA Briefing
 
 on:
+  # Git-based manual trigger: pushing a change to .trigger-send runs a real
+  # scan+send. Lets the briefing be fired with only git access (no Actions
+  # UI or API needed). Ordinary code pushes do NOT trigger runs.
+  push:
+    paths:
+      - ".trigger-send"
   schedule:
     # GitHub Actions cron is UTC only, so each ET time gets two entries (EDT
     # and EST) and the guard step below keeps only the run that lands on the
@@ -39,6 +45,9 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+            echo "mode=scan" >> "$GITHUB_OUTPUT"
           elif [ "$hour" = "09" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
             echo "mode=scan" >> "$GITHUB_OUTPUT"
