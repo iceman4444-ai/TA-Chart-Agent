@@ -328,11 +328,12 @@ def resolve_universe(scan_cfg: dict) -> list[str]:
 
 
 def bullish_score(df: pd.DataFrame, ind: dict) -> float:
-    """Composite bullishness score (roughly 0-12, higher is more bullish).
+    """Composite bullishness score on a 1-5 scale (5 = most bullish).
 
     Rewards trend alignment (close > SMA fast > SMA slow, above SMA long),
     bullish MACD with a rising histogram, RSI in the 50-70 momentum zone
-    (penalizing overbought >75), and 20-day momentum capped at +/-3.
+    (penalizing overbought >75), and 20-day momentum. The raw signal sum
+    spans roughly -4..12 and is mapped linearly onto 1..5.
     """
     last = df.iloc[-1]
     fast, slow = f"SMA{ind['sma_fast']}", f"SMA{ind['sma_slow']}"
@@ -357,7 +358,7 @@ def bullish_score(df: pd.DataFrame, ind: dict) -> float:
     if len(df) > 21:
         ret20 = (last["Close"] / df["Close"].iloc[-21] - 1) * 100
         score += max(-3.0, min(3.0, ret20 * 0.1))
-    return round(score, 2)
+    return round(min(5.0, max(1.0, 1 + (score + 4) / 4)), 1)
 
 
 def support_level(df: pd.DataFrame, ind: dict) -> float | None:
@@ -380,6 +381,100 @@ def support_level(df: pd.DataFrame, ind: dict) -> float | None:
     if pivots and lows[pivots[-1]] < last_close:
         candidates.append(float(lows[pivots[-1]]))
     return max(candidates) if candidates else None
+
+
+SECTOR_ETFS = {
+    "XLK": "Tech", "XLC": "Comm Svcs", "XLY": "Cons Disc", "XLP": "Staples",
+    "XLF": "Financials", "XLV": "Health Care", "XLI": "Industrials",
+    "XLE": "Energy", "XLB": "Materials", "XLU": "Utilities", "XLRE": "Real Estate",
+}
+
+
+def market_overview() -> dict:
+    """Daily and 1-month moves for SPY, QQQ, and the S&P sector ETFs."""
+    stats, frames = {}, {}
+    for sym in ("SPY", "QQQ", *SECTOR_ETFS):
+        try:
+            df = fetch_history(sym, 90)
+            close = df["Close"]
+            stats[sym] = {
+                "name": SECTOR_ETFS.get(sym, sym),
+                "day_pct": round((close.iloc[-1] / close.iloc[-2] - 1) * 100, 2),
+                "month_pct": round((close.iloc[-1] / close.iloc[-22] - 1) * 100, 2)
+                if len(close) > 22 else None,
+            }
+            frames[sym] = df
+        except Exception as exc:
+            log(f"{sym}: market overview fetch failed — {exc}")
+    return {"stats": stats, "frames": frames}
+
+
+def render_market_chart(overview: dict, out_dir: Path) -> Path | None:
+    """Two-panel bottom-of-email graph: SPY/QQQ month path + sector day moves."""
+    frames, stats = overview["frames"], overview["stats"]
+    if "SPY" not in frames or "QQQ" not in frames:
+        return None
+    fg, grid = "#d1d4dc", "#2a2e39"
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5), facecolor="#131722")
+    for ax in (ax1, ax2):
+        ax.set_facecolor("#131722")
+        ax.tick_params(colors=fg, labelsize=8)
+        for spine in ax.spines.values():
+            spine.set_color(grid)
+        ax.grid(color=grid, linestyle=":", linewidth=0.5)
+
+    for sym, color in (("SPY", "#4aa8ff"), ("QQQ", "#e07ae0")):
+        close = frames[sym]["Close"].tail(22)
+        ax1.plot(close.index, (close / close.iloc[0] - 1) * 100, label=sym, color=color, lw=1.4)
+    ax1.axhline(0, color="#787b86", lw=0.7)
+    ax1.set_title("SPY vs QQQ — past month (%)", color=fg, fontsize=10)
+    ax1.legend(facecolor="#131722", edgecolor=grid, labelcolor=fg, fontsize=8)
+    ax1.xaxis.set_major_locator(plt.MaxNLocator(6))
+    for label in ax1.get_xticklabels():
+        label.set_rotation(20)
+
+    sectors = sorted(
+        ((v["name"], v["day_pct"]) for k, v in stats.items() if k in SECTOR_ETFS),
+        key=lambda item: item[1],
+    )
+    if sectors:
+        names, moves = zip(*sectors)
+        colors = ["#2ebd85" if m >= 0 else "#f6465d" for m in moves]
+        ax2.barh(names, moves, color=colors)
+        ax2.axvline(0, color="#787b86", lw=0.7)
+        ax2.set_title("Sector ETFs — today (%)", color=fg, fontsize=10)
+
+    fig.tight_layout()
+    path = out_dir / "market_overview.png"
+    fig.savefig(path, dpi=110, facecolor="#131722")
+    plt.close(fig)
+    return path
+
+
+def technical_market_summary(overview: dict) -> str:
+    """Deterministic fallback for the market summary paragraph."""
+    stats = overview["stats"]
+    if "SPY" not in stats or "QQQ" not in stats:
+        return ""
+    spy, qqq = stats["SPY"], stats["QQQ"]
+    text = (
+        f"SPY {'rose' if spy['day_pct'] >= 0 else 'fell'} {abs(spy['day_pct']):.2f}% today and "
+        f"QQQ {'rose' if qqq['day_pct'] >= 0 else 'fell'} {abs(qqq['day_pct']):.2f}%."
+    )
+    sectors = [(v["name"], v["day_pct"]) for k, v in stats.items() if k in SECTOR_ETFS]
+    if sectors:
+        best = max(sectors, key=lambda s: s[1])
+        worst = min(sectors, key=lambda s: s[1])
+        text += (
+            f" Sector leadership came from {best[0]} ({best[1]:+.2f}%), while "
+            f"{worst[0]} lagged ({worst[1]:+.2f}%)."
+        )
+    if spy.get("month_pct") is not None and qqq.get("month_pct") is not None:
+        text += (
+            f" Over the past month SPY is {spy['month_pct']:+.1f}% and QQQ "
+            f"{qqq['month_pct']:+.1f}%."
+        )
+    return text
 
 
 def fetch_research_notes(cfg: dict) -> list[dict]:
@@ -455,7 +550,17 @@ def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     return items
 
 
-def technical_commentary(df: pd.DataFrame, ind: dict, support: float | None = None) -> str:
+def actionable_line(support: float | None) -> str:
+    """The bolded buy/support recommendation shown under each pick."""
+    if not support:
+        return ""
+    return (
+        f"Actionable: the bullish setup holds while price stays above support near"
+        f" {support:,.2f} — a decisive close below that level breaks the trend."
+    )
+
+
+def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
     """Deterministic commentary on what is driving the bullish setup."""
     last = df.iloc[-1]
     close = df["Close"]
@@ -496,23 +601,20 @@ def technical_commentary(df: pd.DataFrame, ind: dict, support: float | None = No
         bits.append(f"recent volume is running {vol_recent / vol_base - 1:.0%} above its 50-day average")
 
     if not bits:
-        text = "Mixed technical picture; see chart for details."
-    else:
-        text = "; ".join(bits)
-        text = text[0].upper() + text[1:] + "."
-    if support:
-        text += (
-            f" Actionable: the bullish setup holds while price stays above support near"
-            f" {support:,.2f} — a decisive close below that level would break the trend."
-        )
-    return text
+        return "Mixed technical picture; see chart for details."
+    text = "; ".join(bits)
+    return text[0].upper() + text[1:] + "."
 
 
-def llm_commentary(picks: list[dict], research_notes: list[dict] | None = None) -> dict[str, str] | None:
-    """Claude-written driver commentary, when ANTHROPIC_API_KEY is configured.
+def llm_commentary(
+    picks: list[dict],
+    research_notes: list[dict] | None = None,
+    market_stats: dict | None = None,
+) -> tuple[dict[str, dict], str] | None:
+    """Claude-written commentary, when ANTHROPIC_API_KEY is configured.
 
-    Returns {ticker: commentary} or None, in which case the caller keeps the
-    deterministic technical commentary.
+    Returns ({ticker: {commentary, actionable}}, market_summary) or None, in
+    which case the caller keeps the deterministic versions.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return None
@@ -531,13 +633,15 @@ def llm_commentary(picks: list[dict], research_notes: list[dict] | None = None) 
                     "properties": {
                         "ticker": {"type": "string"},
                         "commentary": {"type": "string"},
+                        "actionable": {"type": "string"},
                     },
-                    "required": ["ticker", "commentary"],
+                    "required": ["ticker", "commentary", "actionable"],
                     "additionalProperties": False,
                 },
             },
+            "market_summary": {"type": "string"},
         },
-        "required": ["items"],
+        "required": ["items", "market_summary"],
         "additionalProperties": False,
     }
     try:
@@ -547,38 +651,52 @@ def llm_commentary(picks: list[dict], research_notes: list[dict] | None = None) 
             max_tokens=16000,
             thinking={"type": "adaptive"},
             system=(
-                "You write the commentary section of a daily technical-analysis "
-                "briefing email. For each ticker, write 2-3 sentences on the "
+                "You write the commentary sections of a daily technical-analysis "
+                "briefing email. Bullish scores are on a 1-5 scale (5 = most "
+                "bullish). For each ticker: 'commentary' is 2-3 sentences on the "
                 "plausible drivers of its bullish price action, weaving together "
-                "the technical signals and the recent headlines provided. Then "
-                "end with one actionable sentence using the provided "
-                "support_level: frame the setup as constructive while price "
+                "the technical signals and the recent headlines provided; "
+                "'actionable' is one separate sentence using the provided "
+                "support_level — frame the setup as constructive while price "
                 "holds above that support (entries on strength or on pullbacks "
                 "toward it), and state explicitly that a decisive close below "
-                "the support level breaks the bullish trend. Use the exact "
-                "support number provided. The input may include research_notes "
-                "— excerpts from newsletters the user subscribes to (e.g. TMT "
+                "the support level breaks the bullish trend, using the exact "
+                "support number. The input may include research_notes — "
+                "excerpts from newsletters the user subscribes to (e.g. TMT "
                 "Breakout). Treat them as an analyst's view: when a note "
                 "discusses one of the tickers or a clearly relevant theme, "
                 "weave that perspective in with attribution (e.g. 'TMT "
                 "Breakout flags...'); silently ignore notes irrelevant to a "
-                "pick. Ground every claim ONLY in the provided data — do not "
-                "invent facts, numbers, or events. These are levels to watch, "
-                "not personalized financial advice. Plain prose, no preamble, "
-                "no hype words."
+                "pick. Separately, write 'market_summary': a 4-6 sentence "
+                "paragraph on today's SPY and QQQ moves using the market_stats "
+                "provided, the sector rotation visible in the sector data "
+                "(which groups led and lagged, and what that rotation "
+                "suggests), and macro factors likely to influence stocks over "
+                "a one-month horizon — drawing only on the provided stats, "
+                "headlines, and research notes; if market_stats is empty, "
+                "return an empty market_summary. Ground every claim ONLY in "
+                "the provided data — do not invent facts, numbers, or events. "
+                "These are levels to watch, not personalized financial advice. "
+                "Plain prose, no preamble, no hype words."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
             messages=[{
                 "role": "user",
-                "content": json.dumps(
-                    {"picks": picks, "research_notes": research_notes or []}
-                ),
+                "content": json.dumps({
+                    "picks": picks,
+                    "research_notes": research_notes or [],
+                    "market_stats": market_stats or {},
+                }),
             }],
         )
         text = next(b.text for b in response.content if b.type == "text")
-        result = {item["ticker"]: item["commentary"] for item in json.loads(text)["items"]}
-        log(f"Claude commentary generated for {len(result)} tickers")
-        return result
+        data = json.loads(text)
+        per_ticker = {
+            item["ticker"]: {"commentary": item["commentary"], "actionable": item["actionable"]}
+            for item in data["items"]
+        }
+        log(f"Claude commentary generated for {len(per_ticker)} tickers")
+        return per_ticker, data.get("market_summary", "")
     except Exception as exc:
         log(f"Claude commentary unavailable, using technical commentary — {exc}")
         return None
@@ -601,7 +719,13 @@ def summarize(ticker: str, df: pd.DataFrame, ind: dict) -> dict:
     }
 
 
-def build_html(summaries: list[dict], cids: dict[str, str], generated: str, heading: str) -> str:
+def build_html(
+    summaries: list[dict],
+    cids: dict[str, str],
+    generated: str,
+    heading: str,
+    market: dict | None = None,
+) -> str:
     has_score = "score" in summaries[0]
     rows = []
     for s in summaries:
@@ -627,6 +751,11 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str, head
                 "<p style='max-width:860px;font-size:14px'>"
                 f"<b>Potential drivers:</b> {s['commentary']}</p>"
             )
+        if s.get("actionable"):
+            block += (
+                "<p style='max-width:860px;font-size:14px'>"
+                f"<b>{s['actionable']}</b></p>"
+            )
         if s.get("news"):
             headlines = "".join(
                 f"<li>{n['title']} <span style='color:#777'>({n['source']}, {n['date']})</span></li>"
@@ -635,6 +764,13 @@ def build_html(summaries: list[dict], cids: dict[str, str], generated: str, head
             block += f"<ul style='font-size:13px;max-width:860px'>{headlines}</ul>"
         if ticker in cids:
             block += f"<img src='cid:{cids[ticker]}' width='860' style='max-width:100%'/>"
+        sections.append(block)
+    if market and (market.get("text") or market.get("cid")):
+        block = "<h3 style='font-family:sans-serif'>Market Summary — SPY &amp; QQQ</h3>"
+        if market.get("text"):
+            block += f"<p style='max-width:860px;font-size:14px'>{market['text']}</p>"
+        if market.get("cid"):
+            block += f"<img src='cid:{market['cid']}' width='860' style='max-width:100%'/>"
         sections.append(block)
     charts = "".join(sections)
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
@@ -652,7 +788,11 @@ Not investment advice.</p>
 
 
 def build_email(
-    cfg: dict, summaries: list[dict], chart_paths: dict[str, Path], heading: str
+    cfg: dict,
+    summaries: list[dict],
+    chart_paths: dict[str, Path],
+    heading: str,
+    market: dict | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -662,11 +802,25 @@ def build_email(
     msg.set_content("Your email client does not support HTML. See attached charts.")
 
     cids = {t: make_msgid(domain="ta-chart-agent")[1:-1] for t in chart_paths}
+    market_html = None
+    if market:
+        market_html = {"text": market.get("text", "")}
+        if market.get("path"):
+            market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
-    msg.add_alternative(build_html(summaries, cids, generated, heading), subtype="html")
+    msg.add_alternative(
+        build_html(summaries, cids, generated, heading, market_html), subtype="html"
+    )
     for ticker, path in chart_paths.items():
         msg.get_payload()[1].add_related(
             path.read_bytes(), maintype="image", subtype="png", cid=f"<{cids[ticker]}>"
+        )
+    if market_html and market_html.get("cid"):
+        msg.get_payload()[1].add_related(
+            market["path"].read_bytes(),
+            maintype="image",
+            subtype="png",
+            cid=f"<{market_html['cid']}>",
         )
     return msg
 
@@ -749,7 +903,8 @@ def main(argv: list[str] | None = None) -> int:
                 summary["score"] = score
                 summary["news"] = fetch_news(ticker)
                 summary["support"] = support_level(df, ind)
-                summary["commentary"] = technical_commentary(df, ind, summary["support"])
+                summary["commentary"] = technical_commentary(df, ind)
+                summary["actionable"] = actionable_line(summary["support"])
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -760,7 +915,16 @@ def main(argv: list[str] | None = None) -> int:
         log("no tickers succeeded; aborting")
         return 1
 
+    market = None
     if args.scan:
+        overview = market_overview()
+        market_text = technical_market_summary(overview)
+        market_path = None
+        try:
+            market_path = render_market_chart(overview, out_dir)
+        except Exception as exc:
+            log(f"market chart failed — {exc}")
+
         # Upgrade the deterministic commentary to Claude-written prose when an
         # API key is configured; otherwise keep the technical version.
         picks_context = [
@@ -775,19 +939,34 @@ def main(argv: list[str] | None = None) -> int:
             for s in summaries
         ]
         research_notes = fetch_research_notes(cfg)
-        for ticker, text in (llm_commentary(picks_context, research_notes) or {}).items():
+        llm_result = llm_commentary(picks_context, research_notes, overview["stats"])
+        if llm_result:
+            per_ticker, llm_market = llm_result
             for s in summaries:
-                if s["ticker"] == ticker:
-                    s["commentary"] = text
+                item = per_ticker.get(s["ticker"])
+                if item:
+                    s["commentary"] = item["commentary"]
+                    s["actionable"] = item["actionable"]
+            if llm_market:
+                market_text = llm_market
+        if market_text or market_path:
+            market = {"text": market_text, "path": market_path}
 
-    msg = build_email(cfg, summaries, chart_paths, heading)
+    msg = build_email(cfg, summaries, chart_paths, heading, market)
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
         # PNGs instead of cid: attachments.
         preview = out_dir / "email_preview.html"
         cids = {t: p.name for t, p in chart_paths.items()}
+        preview_market = None
+        if market:
+            preview_market = {"text": market.get("text", "")}
+            if market.get("path"):
+                preview_market["cid"] = market["path"].name
         generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
-        preview.write_text(build_html(summaries, cids, generated, heading).replace("cid:", ""))
+        preview.write_text(
+            build_html(summaries, cids, generated, heading, preview_market).replace("cid:", "")
+        )
         log(f"DRY RUN — email not sent. Preview: {preview}")
         log(f"DRY RUN — would send to: {', '.join(cfg['email']['to_addrs'])} "
             f"with subject '{msg['Subject']}'")
