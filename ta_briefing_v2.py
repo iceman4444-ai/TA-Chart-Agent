@@ -477,33 +477,25 @@ def technical_market_summary(overview: dict) -> str:
     return text
 
 
-def fetch_research_notes(cfg: dict) -> list[dict]:
-    """Recent research newsletters pulled from the Gmail inbox via IMAP.
+def _gmail_notes(cfg: dict, query: str, max_items: int, max_chars: int) -> list[dict]:
+    """Newest Gmail messages matching a search query, as plain-text excerpts.
 
-    Uses the same account and app password as sending. The Gmail search query
-    (config: research.gmail_search) selects the source — e.g. TMT Breakout
-    issues — and the excerpts are handed to Claude as analysis context.
-    Failures are logged and skipped; the briefing never blocks on this.
+    Uses the same account and app password as sending. Failures are logged
+    and skipped; the briefing never blocks on the inbox.
     """
     import html as html_lib
     import imaplib
     import re
     from email import message_from_bytes, policy
 
-    research = cfg.get("research") or {}
-    if not research.get("enabled"):
-        return []
     password = os.environ.get("TA_SMTP_PASSWORD")
     if not password:
-        log("research: TA_SMTP_PASSWORD not set; skipping inbox research")
+        log(f"inbox search '{query}': TA_SMTP_PASSWORD not set; skipping")
         return []
-
-    query = research.get("gmail_search", "TMT Breakout newer_than:10d")
-    max_items = research.get("max_items", 3)
-    max_chars = research.get("max_chars", 4000)
     notes = []
     try:
-        imap = imaplib.IMAP4_SSL(research.get("imap_host", "imap.gmail.com"), 993)
+        host = (cfg.get("research") or {}).get("imap_host", "imap.gmail.com")
+        imap = imaplib.IMAP4_SSL(host, 993)
         imap.login(cfg["email"]["username"], password)
         imap.select('"[Gmail]/All Mail"', readonly=True)
         _, data = imap.search(None, "X-GM-RAW", f'"{query}"')
@@ -524,10 +516,41 @@ def fetch_research_notes(cfg: dict) -> list[dict]:
                     "excerpt": text[:max_chars],
                 })
         imap.logout()
-        log(f"research: loaded {len(notes)} note(s) matching '{query}'")
+        log(f"inbox search '{query}': loaded {len(notes)} note(s)")
     except Exception as exc:
-        log(f"research: inbox fetch failed — {exc}")
+        log(f"inbox search '{query}' failed — {exc}")
     return notes
+
+
+def fetch_research_notes(cfg: dict) -> list[dict]:
+    """Recent research newsletters (e.g. TMT Breakout) for analysis context."""
+    research = cfg.get("research") or {}
+    if not research.get("enabled"):
+        return []
+    return _gmail_notes(
+        cfg,
+        research.get("gmail_search", "TMT Breakout newer_than:10d"),
+        research.get("max_items", 3),
+        research.get("max_chars", 4000),
+    )
+
+
+def fetch_podcast_notes(cfg: dict) -> list[dict]:
+    """Latest investment-podcast highlights emailed to the inbox.
+
+    Intended for output from the user's podcast-summarizing Claude project:
+    that project emails its highlights to this Gmail account, and the newest
+    matching message becomes the "Investment Podcast Highlights" section.
+    """
+    research = cfg.get("research") or {}
+    query = research.get("podcast_search")
+    if not research.get("enabled") or not query:
+        return []
+    return _gmail_notes(
+        cfg, query,
+        research.get("podcast_max_items", 2),
+        research.get("podcast_max_chars", 6000),
+    )
 
 
 def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
@@ -610,11 +633,13 @@ def llm_commentary(
     picks: list[dict],
     research_notes: list[dict] | None = None,
     market_stats: dict | None = None,
-) -> tuple[dict[str, dict], str] | None:
+    podcast_notes: list[dict] | None = None,
+) -> tuple[dict[str, dict], str, list[str]] | None:
     """Claude-written commentary, when ANTHROPIC_API_KEY is configured.
 
-    Returns ({ticker: {commentary, actionable}}, market_summary) or None, in
-    which case the caller keeps the deterministic versions.
+    Returns ({ticker: {commentary, actionable}}, market_summary,
+    podcast_highlights) or None, in which case the caller keeps the
+    deterministic versions.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return None
@@ -640,8 +665,9 @@ def llm_commentary(
                 },
             },
             "market_summary": {"type": "string"},
+            "podcast_highlights": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["items", "market_summary"],
+        "required": ["items", "market_summary", "podcast_highlights"],
         "additionalProperties": False,
     }
     try:
@@ -674,7 +700,12 @@ def llm_commentary(
                 "suggests), and macro factors likely to influence stocks over "
                 "a one-month horizon — drawing only on the provided stats, "
                 "headlines, and research notes; if market_stats is empty, "
-                "return an empty market_summary. Ground every claim ONLY in "
+                "return an empty market_summary. Also fill 'podcast_highlights': "
+                "if podcast_notes are provided, distill them into 3-6 short "
+                "bullet highlights an investor would want to remember — the "
+                "key theses, tickers, and calls made, each attributed to the "
+                "episode/show when identifiable; if podcast_notes is empty, "
+                "return an empty array. Ground every claim ONLY in "
                 "the provided data — do not invent facts, numbers, or events. "
                 "These are levels to watch, not personalized financial advice. "
                 "Plain prose, no preamble, no hype words."
@@ -686,6 +717,7 @@ def llm_commentary(
                     "picks": picks,
                     "research_notes": research_notes or [],
                     "market_stats": market_stats or {},
+                    "podcast_notes": podcast_notes or [],
                 }),
             }],
         )
@@ -696,7 +728,7 @@ def llm_commentary(
             for item in data["items"]
         }
         log(f"Claude commentary generated for {len(per_ticker)} tickers")
-        return per_ticker, data.get("market_summary", "")
+        return per_ticker, data.get("market_summary", ""), data.get("podcast_highlights", [])
     except Exception as exc:
         log(f"Claude commentary unavailable, using technical commentary — {exc}")
         return None
@@ -725,6 +757,7 @@ def build_html(
     generated: str,
     heading: str,
     market: dict | None = None,
+    podcast: dict | None = None,
 ) -> str:
     has_score = "score" in summaries[0]
     rows = []
@@ -772,6 +805,19 @@ def build_html(
         if market.get("cid"):
             block += f"<img src='cid:{market['cid']}' width='860' style='max-width:100%'/>"
         sections.append(block)
+    if podcast and (podcast.get("highlights") or podcast.get("text")):
+        block = "<h3 style='font-family:sans-serif'>Investment Podcast Highlights</h3>"
+        if podcast.get("highlights"):
+            block += (
+                "<ul style='max-width:860px;font-size:14px'>"
+                + "".join(f"<li>{h}</li>" for h in podcast["highlights"])
+                + "</ul>"
+            )
+        else:
+            block += f"<p style='max-width:860px;font-size:14px'>{podcast['text']}</p>"
+        if podcast.get("source"):
+            block += f"<p style='color:#777;font-size:12px'>Source: {podcast['source']}</p>"
+        sections.append(block)
     charts = "".join(sections)
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
@@ -793,6 +839,7 @@ def build_email(
     chart_paths: dict[str, Path],
     heading: str,
     market: dict | None = None,
+    podcast: dict | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -809,7 +856,7 @@ def build_email(
             market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
     msg.add_alternative(
-        build_html(summaries, cids, generated, heading, market_html), subtype="html"
+        build_html(summaries, cids, generated, heading, market_html, podcast), subtype="html"
     )
     for ticker, path in chart_paths.items():
         msg.get_payload()[1].add_related(
@@ -916,6 +963,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     market = None
+    podcast = None
     if args.scan:
         overview = market_overview()
         market_text = technical_market_summary(overview)
@@ -939,9 +987,18 @@ def main(argv: list[str] | None = None) -> int:
             for s in summaries
         ]
         research_notes = fetch_research_notes(cfg)
-        llm_result = llm_commentary(picks_context, research_notes, overview["stats"])
+        podcast_notes = fetch_podcast_notes(cfg)
+        if podcast_notes:
+            podcast = {
+                "source": f"{podcast_notes[0]['subject']} ({podcast_notes[0]['date']})",
+                "text": podcast_notes[0]["excerpt"][:1500],
+                "highlights": None,
+            }
+        llm_result = llm_commentary(
+            picks_context, research_notes, overview["stats"], podcast_notes
+        )
         if llm_result:
-            per_ticker, llm_market = llm_result
+            per_ticker, llm_market, llm_podcast = llm_result
             for s in summaries:
                 item = per_ticker.get(s["ticker"])
                 if item:
@@ -949,10 +1006,12 @@ def main(argv: list[str] | None = None) -> int:
                     s["actionable"] = item["actionable"]
             if llm_market:
                 market_text = llm_market
+            if llm_podcast and podcast:
+                podcast["highlights"] = llm_podcast
         if market_text or market_path:
             market = {"text": market_text, "path": market_path}
 
-    msg = build_email(cfg, summaries, chart_paths, heading, market)
+    msg = build_email(cfg, summaries, chart_paths, heading, market, podcast)
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
         # PNGs instead of cid: attachments.
@@ -965,7 +1024,9 @@ def main(argv: list[str] | None = None) -> int:
                 preview_market["cid"] = market["path"].name
         generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
         preview.write_text(
-            build_html(summaries, cids, generated, heading, preview_market).replace("cid:", "")
+            build_html(
+                summaries, cids, generated, heading, preview_market, podcast
+            ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")
         log(f"DRY RUN — would send to: {', '.join(cfg['email']['to_addrs'])} "

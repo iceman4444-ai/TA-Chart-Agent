@@ -43,6 +43,12 @@ research:
   gmail_search: "TMT Breakout newer_than:10d"
   max_items: 3     # newest matching messages to include
   max_chars: 4000  # excerpt length per message
+  # Investment podcast highlights: the user's podcast-summarizing Claude
+  # project emails its output to this inbox; the newest matching message is
+  # distilled into a bulleted section at the bottom of the recap.
+  podcast_search: "subject:podcast newer_than:7d"
+  podcast_max_items: 2
+  podcast_max_chars: 6000
 
 # Bullish scan (--scan): score the universe and email the top_n most bullish
 # charts. Run on the 5:00pm ET weekday schedule.

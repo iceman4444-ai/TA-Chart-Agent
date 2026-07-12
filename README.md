@@ -76,6 +76,12 @@ and the `scan.top_n` most bullish make the email. The static
 (The old fixed-watchlist mode is still available via manual dispatch with
 mode `watchlist`, using the `tickers` list.)
 
+  Below the picks, each recap ends with a **Market Summary** (SPY/QQQ moves,
+  sector rotation, 1-month macro view, plus a two-panel graph) and — when a
+  message matching `research.podcast_search` exists in the inbox — an
+  **Investment Podcast Highlights** section: the newest such email (e.g.
+  sent by a podcast-summarizing Claude project) distilled into bullets.
+
   When `research.enabled` is on, the scan also pulls the newest messages
   matching `research.gmail_search` (default: TMT Breakout issues from the
   last 10 days) from the Gmail inbox via IMAP — same app password as
