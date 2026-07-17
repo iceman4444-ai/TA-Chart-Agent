@@ -553,6 +553,28 @@ def fetch_podcast_notes(cfg: dict) -> list[dict]:
     )
 
 
+def resistance_level(df: pd.DataFrame, ind: dict) -> float | None:
+    """Nearest meaningful resistance above the last close.
+
+    Mirror image of support_level: the lowest of the Fibonacci levels, the
+    latest swing high, and any moving averages sitting above price — the
+    first ceiling the bulls need to clear.
+    """
+    last_close = float(df["Close"].iloc[-1])
+    candidates = []
+    window = df.tail(180)
+    candidates += [lvl for lvl in fib_levels(window).values() if lvl > last_close]
+    highs = window["High"].to_numpy()
+    pivots = find_pivots(highs, "high")
+    if pivots and highs[pivots[-1]] > last_close:
+        candidates.append(float(highs[pivots[-1]]))
+    for n in (ind["sma_fast"], ind["sma_slow"], ind.get("sma_long")):
+        col = f"SMA{n}"
+        if n and col in df and pd.notna(df[col].iloc[-1]) and df[col].iloc[-1] > last_close:
+            candidates.append(float(df[col].iloc[-1]))
+    return min(candidates) if candidates else None
+
+
 def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     """Recent headlines from Yahoo Finance — potential catalysts for the move."""
     items = []
@@ -629,17 +651,142 @@ def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
     return text[0].upper() + text[1:] + "."
 
 
+def fetch_tweets(cfg: dict, tickers: list[str]) -> dict[str, list[dict]]:
+    """Recent X/Twitter chatter per ticker, via the official API v2.
+
+    Requires an X_BEARER_TOKEN (paid X API tier with search access). Skips
+    silently when no token is configured; stops on the first API error so a
+    rate limit can't stall the briefing.
+    """
+    import requests
+
+    token = os.environ.get("X_BEARER_TOKEN")
+    research = cfg.get("research") or {}
+    if not token or not research.get("twitter_enabled", True):
+        return {}
+    out = {}
+    for ticker in tickers[: research.get("twitter_max_tickers", 6)]:
+        try:
+            resp = requests.get(
+                "https://api.twitter.com/2/tweets/search/recent",
+                params={
+                    "query": f'("${ticker}" OR "{ticker} stock") lang:en -is:retweet',
+                    "max_results": 10,
+                    "tweet.fields": "created_at,public_metrics",
+                },
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                log(f"X search failed for {ticker} (HTTP {resp.status_code}); skipping the rest")
+                break
+            tweets = sorted(
+                resp.json().get("data") or [],
+                key=lambda t: (t.get("public_metrics") or {}).get("like_count", 0),
+                reverse=True,
+            )[:3]
+            if tweets:
+                out[ticker] = [
+                    {
+                        "text": t["text"][:280],
+                        "likes": (t.get("public_metrics") or {}).get("like_count", 0),
+                        "date": (t.get("created_at") or "")[:10],
+                    }
+                    for t in tweets
+                ]
+        except Exception as exc:
+            log(f"X search failed for {ticker} — {exc}; skipping the rest")
+            break
+    if out:
+        log(f"X chatter loaded for: {', '.join(out)}")
+    return out
+
+
+def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
+    """Tickers with an explicit investment view voiced in the podcast notes."""
+    if not podcast_notes or not os.environ.get("ANTHROPIC_API_KEY"):
+        return []
+    try:
+        import anthropic
+    except ImportError:
+        return []
+    schema = {
+        "type": "object",
+        "properties": {
+            "ideas": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "ticker": {"type": "string"},
+                        "thesis": {"type": "string"},
+                        "sentiment": {"type": "string", "enum": ["bullish", "bearish", "neutral"]},
+                    },
+                    "required": ["ticker", "thesis", "sentiment"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["ideas"],
+        "additionalProperties": False,
+    }
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=16000,
+            thinking={"type": "adaptive"},
+            system=(
+                "Extract individual stock or ETF investment ideas from these "
+                "podcast summaries. Include only names where a speaker voiced "
+                "an explicit view. ticker: the US-listed Yahoo Finance symbol "
+                "(resolve company names to tickers; skip non-US or ambiguous "
+                "names). thesis: one sentence stating the speaker's view and "
+                "why, attributed to the show when identifiable. sentiment: "
+                "bullish, bearish, or neutral. Order by prominence. Return an "
+                "empty list if there are none."
+            ),
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+            messages=[{"role": "user", "content": json.dumps(podcast_notes)}],
+        )
+        ideas = json.loads(next(b.text for b in response.content if b.type == "text"))["ideas"]
+        log("podcast ideas extracted: " + (", ".join(i["ticker"] for i in ideas) or "none"))
+        return ideas
+    except Exception as exc:
+        log(f"podcast idea extraction failed — {exc}")
+        return []
+
+
+def default_setup_plan(setup: dict) -> str:
+    """Deterministic fallback trade plan with the computed levels."""
+    support, resistance = setup.get("support"), setup.get("resistance")
+    if support and resistance:
+        return (
+            f"Trade plan: constructive above support near {support:,.2f} with first "
+            f"resistance near {resistance:,.2f}; a decisive close below "
+            f"{support:,.2f} invalidates the setup."
+        )
+    if support:
+        return (
+            f"Trade plan: constructive above support near {support:,.2f}; a decisive "
+            f"close below that level invalidates the setup."
+        )
+    return "Trade plan: no clean support level below price — wait for a base to form."
+
+
 def llm_commentary(
     picks: list[dict],
     research_notes: list[dict] | None = None,
     market_stats: dict | None = None,
     podcast_notes: list[dict] | None = None,
-) -> tuple[dict[str, dict], str, list[str]] | None:
+    podcast_setups: list[dict] | None = None,
+    tweets: dict[str, list[dict]] | None = None,
+) -> tuple[dict[str, dict], str, list[str], dict[str, dict]] | None:
     """Claude-written commentary, when ANTHROPIC_API_KEY is configured.
 
     Returns ({ticker: {commentary, actionable}}, market_summary,
-    podcast_highlights) or None, in which case the caller keeps the
-    deterministic versions.
+    podcast_highlights, {ticker: {analysis, plan}}) or None, in which case
+    the caller keeps the deterministic versions.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return None
@@ -666,8 +813,21 @@ def llm_commentary(
             },
             "market_summary": {"type": "string"},
             "podcast_highlights": {"type": "array", "items": {"type": "string"}},
+            "setups": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "ticker": {"type": "string"},
+                        "analysis": {"type": "string"},
+                        "plan": {"type": "string"},
+                    },
+                    "required": ["ticker", "analysis", "plan"],
+                    "additionalProperties": False,
+                },
+            },
         },
-        "required": ["items", "market_summary", "podcast_highlights"],
+        "required": ["items", "market_summary", "podcast_highlights", "setups"],
         "additionalProperties": False,
     }
     try:
@@ -705,7 +865,18 @@ def llm_commentary(
                 "bullet highlights an investor would want to remember — the "
                 "key theses, tickers, and calls made, each attributed to the "
                 "episode/show when identifiable; if podcast_notes is empty, "
-                "return an empty array. Ground every claim ONLY in "
+                "return an empty array. For each entry in "
+                "podcast_trade_candidates, add a 'setups' item: 'analysis' is "
+                "1-2 sentences connecting the podcast thesis to the current "
+                "technical posture (score, trend, levels); 'plan' is ONE "
+                "sentence with the exact numbers provided — the constructive "
+                "zone above the support level, the first resistance to watch, "
+                "and that a decisive close below the support invalidates the "
+                "setup (for a bearish podcast view, frame it as a name to "
+                "avoid or de-risk rather than a long setup). If tweets are "
+                "provided, treat them as unverified crowd chatter: you may "
+                "note notable sentiment as 'X chatter...', never as fact, and "
+                "ignore anything spammy. Ground every claim ONLY in "
                 "the provided data — do not invent facts, numbers, or events. "
                 "These are levels to watch, not personalized financial advice. "
                 "Plain prose, no preamble, no hype words."
@@ -718,6 +889,8 @@ def llm_commentary(
                     "research_notes": research_notes or [],
                     "market_stats": market_stats or {},
                     "podcast_notes": podcast_notes or [],
+                    "podcast_trade_candidates": podcast_setups or [],
+                    "tweets": tweets or {},
                 }),
             }],
         )
@@ -728,7 +901,16 @@ def llm_commentary(
             for item in data["items"]
         }
         log(f"Claude commentary generated for {len(per_ticker)} tickers")
-        return per_ticker, data.get("market_summary", ""), data.get("podcast_highlights", [])
+        setups_map = {
+            item["ticker"]: {"analysis": item["analysis"], "plan": item["plan"]}
+            for item in data.get("setups", [])
+        }
+        return (
+            per_ticker,
+            data.get("market_summary", ""),
+            data.get("podcast_highlights", []),
+            setups_map,
+        )
     except Exception as exc:
         log(f"Claude commentary unavailable, using technical commentary — {exc}")
         return None
@@ -758,6 +940,7 @@ def build_html(
     heading: str,
     market: dict | None = None,
     podcast: dict | None = None,
+    setups: list[dict] | None = None,
 ) -> str:
     has_score = "score" in summaries[0]
     rows = []
@@ -818,6 +1001,30 @@ def build_html(
         if podcast.get("source"):
             block += f"<p style='color:#777;font-size:12px'>Source: {podcast['source']}</p>"
         sections.append(block)
+    if setups:
+        block = "<h3 style='font-family:sans-serif'>Podcast Trade Setups</h3>"
+        for st in setups:
+            title = f"{st['ticker']} — bullish score {st['score']}"
+            if st.get("sentiment"):
+                title += f" · podcast view: {st['sentiment']}"
+            block += f"<h4 style='font-family:sans-serif;margin-bottom:4px'>{title}</h4>"
+            if st.get("thesis"):
+                block += (
+                    "<p style='max-width:860px;font-size:14px'>"
+                    f"<i>Podcast thesis:</i> {st['thesis']}</p>"
+                )
+            if st.get("analysis"):
+                block += f"<p style='max-width:860px;font-size:14px'>{st['analysis']}</p>"
+            if st.get("plan"):
+                block += (
+                    "<p style='max-width:860px;font-size:14px'>"
+                    f"<b>{st['plan']}</b></p>"
+                )
+            if st["ticker"] in cids:
+                block += (
+                    f"<img src='cid:{cids[st['ticker']]}' width='860' style='max-width:100%'/>"
+                )
+        sections.append(block)
     charts = "".join(sections)
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
@@ -840,6 +1047,7 @@ def build_email(
     heading: str,
     market: dict | None = None,
     podcast: dict | None = None,
+    setups: list[dict] | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -856,7 +1064,8 @@ def build_email(
             market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
     msg.add_alternative(
-        build_html(summaries, cids, generated, heading, market_html, podcast), subtype="html"
+        build_html(summaries, cids, generated, heading, market_html, podcast, setups),
+        subtype="html",
     )
     for ticker, path in chart_paths.items():
         msg.get_payload()[1].add_related(
@@ -964,6 +1173,7 @@ def main(argv: list[str] | None = None) -> int:
 
     market = None
     podcast = None
+    podcast_setups = []
     if args.scan:
         overview = market_overview()
         market_text = technical_market_summary(overview)
@@ -994,11 +1204,51 @@ def main(argv: list[str] | None = None) -> int:
                 "text": podcast_notes[0]["excerpt"][:1500],
                 "highlights": None,
             }
+
+        # Turn podcast-mentioned tickers into full trade setups: extract the
+        # ideas, run each through the same TA engine, chart them.
+        podcast_setups = []
+        if podcast_notes:
+            picked = {s["ticker"] for s in summaries}
+            max_setups = (cfg.get("research") or {}).get("podcast_max_setups", 3)
+            for idea in llm_extract_podcast_ideas(podcast_notes):
+                if len(podcast_setups) >= max_setups:
+                    break
+                tick = (idea.get("ticker") or "").upper().strip()
+                if not tick or tick in picked:
+                    continue
+                try:
+                    df = add_indicators(fetch_history(tick, cfg["lookback_days"]), ind)
+                    chart_paths[tick] = render_chart(tick, df, ind, cfg["chart_days"], out_dir)
+                    setup = {
+                        "ticker": tick,
+                        "thesis": idea.get("thesis", ""),
+                        "sentiment": idea.get("sentiment", ""),
+                        "score": bullish_score(df, ind),
+                        "close": round(float(df["Close"].iloc[-1]), 2),
+                        "support": support_level(df, ind),
+                        "resistance": resistance_level(df, ind),
+                    }
+                    setup["plan"] = default_setup_plan(setup)
+                    podcast_setups.append(setup)
+                    picked.add(tick)
+                    log(f"{tick}: podcast trade setup prepared (score {setup['score']})")
+                except Exception as exc:
+                    log(f"{tick}: podcast setup skipped — {exc}")
+
+        tweets = fetch_tweets(
+            cfg, [s["ticker"] for s in summaries] + [st["ticker"] for st in podcast_setups]
+        )
         llm_result = llm_commentary(
-            picks_context, research_notes, overview["stats"], podcast_notes
+            picks_context,
+            research_notes,
+            overview["stats"],
+            podcast_notes,
+            [{k: v for k, v in st.items() if k != "plan"} for st in podcast_setups],
+            tweets,
         )
         if llm_result:
-            per_ticker, llm_market, llm_podcast = llm_result
+            per_ticker, llm_market, llm_podcast, llm_setups = llm_result
             for s in summaries:
                 item = per_ticker.get(s["ticker"])
                 if item:
@@ -1008,10 +1258,16 @@ def main(argv: list[str] | None = None) -> int:
                 market_text = llm_market
             if llm_podcast and podcast:
                 podcast["highlights"] = llm_podcast
+            for st in podcast_setups:
+                item = llm_setups.get(st["ticker"])
+                if item:
+                    st["analysis"] = item.get("analysis", "")
+                    if item.get("plan"):
+                        st["plan"] = item["plan"]
         if market_text or market_path:
             market = {"text": market_text, "path": market_path}
 
-    msg = build_email(cfg, summaries, chart_paths, heading, market, podcast)
+    msg = build_email(cfg, summaries, chart_paths, heading, market, podcast, podcast_setups)
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
         # PNGs instead of cid: attachments.
@@ -1025,7 +1281,7 @@ def main(argv: list[str] | None = None) -> int:
         generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
         preview.write_text(
             build_html(
-                summaries, cids, generated, heading, preview_market, podcast
+                summaries, cids, generated, heading, preview_market, podcast, podcast_setups
             ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")

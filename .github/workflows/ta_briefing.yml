@@ -97,6 +97,8 @@ jobs:
           # by value format (Anthropic keys start with sk-ant-).
           SECRET_A: ${{ secrets.GOOG }}
           SECRET_B: ${{ secrets.TARECAP2 }}
+          # Optional: X/Twitter chatter for picks and podcast setups
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
         run: |
           if [[ "$SECRET_A" == sk-ant-* ]]; then
             export ANTHROPIC_API_KEY="$SECRET_A" TA_SMTP_PASSWORD="$SECRET_B"

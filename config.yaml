@@ -49,6 +49,13 @@ research:
   podcast_search: "subject:podcast newer_than:7d"
   podcast_max_items: 2
   podcast_max_chars: 6000
+  # How many podcast-mentioned tickers get a full trade setup (TA scoring,
+  # support/resistance levels, chart) in the Podcast Trade Setups section.
+  podcast_max_setups: 3
+  # X/Twitter chatter (official API v2; requires an X_BEARER_TOKEN secret —
+  # paid X API tier with search access). Skipped silently when absent.
+  twitter_enabled: true
+  twitter_max_tickers: 6
 
 # Bullish scan (--scan): score the universe and email the top_n most bullish
 # charts. Run on the 5:00pm ET weekday schedule.

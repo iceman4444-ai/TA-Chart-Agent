@@ -81,6 +81,14 @@ mode `watchlist`, using the `tickers` list.)
   message matching `research.podcast_search` exists in the inbox — an
   **Investment Podcast Highlights** section: the newest such email (e.g.
   sent by a podcast-summarizing Claude project) distilled into bullets.
+  Below that, **Podcast Trade Setups**: tickers a speaker voiced an explicit
+  view on are extracted, run through the same TA engine (bullish score,
+  support and resistance levels, chart), and written up as a thesis +
+  technical analysis + a bolded trade plan with exact levels
+  (`research.podcast_max_setups` per email). With an optional
+  `X_BEARER_TOKEN` repo secret (official X API v2, paid tier with search),
+  recent X chatter on the picks and setups is folded into the commentary as
+  clearly-labeled crowd sentiment; without the token it is skipped.
 
   When `research.enabled` is on, the scan also pulls the newest messages
   matching `research.gmail_search` (default: TMT Breakout issues from the
