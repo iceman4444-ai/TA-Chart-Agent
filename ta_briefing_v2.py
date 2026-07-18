@@ -553,6 +553,62 @@ def fetch_podcast_notes(cfg: dict) -> list[dict]:
     )
 
 
+def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
+    """Recent episodes from the configured podcast RSS network.
+
+    Show notes usually name the tickers and themes discussed, so they feed
+    the highlights and trade-setup extraction alongside inbox messages.
+    Failing feeds are logged and skipped.
+    """
+    import html as html_lib
+    import re
+    import time
+
+    import feedparser
+
+    research = cfg.get("research") or {}
+    feeds = research.get("podcast_feeds") or []
+    if not research.get("enabled") or not feeds:
+        return []
+    max_age = research.get("podcast_feed_days", 7) * 86400
+    max_chars = research.get("podcast_feed_chars", 2000)
+    now = time.time()
+    notes = []
+    for url in feeds:
+        try:
+            parsed = feedparser.parse(url, agent="Mozilla/5.0 (TA-Chart-Agent)")
+            show = (parsed.feed.get("title") or url)[:60]
+            for entry in parsed.entries[:5]:
+                stamp = entry.get("published_parsed") or entry.get("updated_parsed")
+                if not stamp or now - time.mktime(stamp) > max_age:
+                    continue
+                text = entry.get("summary") or entry.get("description") or ""
+                text = html_lib.unescape(re.sub(r"<[^>]+>", " ", text))
+                text = re.sub(r"\s+", " ", text).strip()
+                notes.append({
+                    "subject": f"{show}: {entry.get('title', 'episode')}",
+                    "date": (entry.get("published") or "")[:16],
+                    "excerpt": text[:max_chars],
+                    "_ts": time.mktime(stamp),
+                })
+        except Exception as exc:
+            log(f"podcast feed failed ({url}) — {exc}")
+    notes.sort(key=lambda n: n["_ts"], reverse=True)
+    # keep the network diverse: at most 2 episodes per show
+    capped, per_show = [], {}
+    for note in notes:
+        show = note["subject"].split(":")[0]
+        if per_show.get(show, 0) >= 2:
+            continue
+        per_show[show] = per_show.get(show, 0) + 1
+        note.pop("_ts", None)
+        capped.append(note)
+        if len(capped) >= research.get("podcast_feed_max", 8):
+            break
+    log(f"podcast network: {len(capped)} recent episode note(s) from {len(feeds)} feeds")
+    return capped
+
+
 def resistance_level(df: pd.DataFrame, ind: dict) -> float | None:
     """Nearest meaningful resistance above the last close.
 
@@ -861,10 +917,12 @@ def llm_commentary(
                 "a one-month horizon — drawing only on the provided stats, "
                 "headlines, and research notes; if market_stats is empty, "
                 "return an empty market_summary. Also fill 'podcast_highlights': "
-                "if podcast_notes are provided, distill them into 3-6 short "
-                "bullet highlights an investor would want to remember — the "
-                "key theses, tickers, and calls made, each attributed to the "
-                "episode/show when identifiable; if podcast_notes is empty, "
+                "if podcast_notes are provided (inbox summaries plus recent "
+                "episodes from a podcast RSS network), distill them into 4-8 "
+                "short bullet highlights an investor would want to remember — "
+                "the key theses, tickers, and calls made, each attributed to "
+                "the show/episode; prefer concrete investment views over "
+                "episode descriptions; if podcast_notes is empty, "
                 "return an empty array. For each entry in "
                 "podcast_trade_candidates, add a 'setups' item: 'analysis' is "
                 "1-2 sentences connecting the podcast thesis to the current "
@@ -1197,10 +1255,13 @@ def main(argv: list[str] | None = None) -> int:
             for s in summaries
         ]
         research_notes = fetch_research_notes(cfg)
-        podcast_notes = fetch_podcast_notes(cfg)
+        podcast_notes = fetch_podcast_notes(cfg) + fetch_podcast_feed_notes(cfg)
         if podcast_notes:
+            sources = "; ".join(n["subject"] for n in podcast_notes[:3])
+            if len(podcast_notes) > 3:
+                sources += f"; +{len(podcast_notes) - 3} more"
             podcast = {
-                "source": f"{podcast_notes[0]['subject']} ({podcast_notes[0]['date']})",
+                "source": sources,
                 "text": podcast_notes[0]["excerpt"][:1500],
                 "highlights": None,
             }

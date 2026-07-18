@@ -52,6 +52,23 @@ research:
   # How many podcast-mentioned tickers get a full trade setup (TA scoring,
   # support/resistance levels, chart) in the Podcast Trade Setups section.
   podcast_max_setups: 3
+  # Podcast RSS network: recent episodes (titles + show notes) from these
+  # feeds join the inbox messages as podcast intel. All URLs verified live.
+  podcast_feeds:
+    - https://omny.fm/shows/odd-lots/playlists/podcast.rss   # Bloomberg Odd Lots
+    - https://allinchamathjason.libsyn.com/rss               # All-In
+    - https://animalspiritspod.libsyn.com/rss                # Animal Spirits
+    - https://theinvestorspodcast.libsyn.com/rss             # We Study Billionaires
+    - https://mebfaber.libsyn.com/rss                        # The Meb Faber Show
+    - https://feeds.feedburner.com/MacroVoices               # MacroVoices
+    - https://feeds.megaphone.fm/forwardguidance             # Forward Guidance
+    - https://chatwithtraders.libsyn.com/rss                 # Chat With Traders
+    - https://omny.fm/shows/masters-in-business/playlists/podcast.rss  # Masters in Business
+    - https://feeds.megaphone.fm/profgmarkets                # Prof G Markets
+    - https://omny.fm/shows/bloomberg-surveillance/playlists/podcast.rss  # Bloomberg Surveillance
+  podcast_feed_days: 7   # episode recency window
+  podcast_feed_max: 10   # newest episodes kept across all feeds
+  podcast_feed_chars: 2000
   # X/Twitter chatter (official API v2; requires an X_BEARER_TOKEN secret —
   # paid X API tier with search access). Skipped silently when absent.
   twitter_enabled: true

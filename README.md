@@ -80,7 +80,13 @@ mode `watchlist`, using the `tickers` list.)
   sector rotation, 1-month macro view, plus a two-panel graph) and — when a
   message matching `research.podcast_search` exists in the inbox — an
   **Investment Podcast Highlights** section: the newest such email (e.g.
-  sent by a podcast-summarizing Claude project) distilled into bullets.
+  sent by a podcast-summarizing Claude project) distilled into bullets,
+  joined by recent episodes (titles + show notes) from the
+  `research.podcast_feeds` RSS network — 11 verified shows including Odd
+  Lots, All-In, Animal Spirits, We Study
+  Billionaires, Meb Faber, MacroVoices, Forward Guidance, Chat With
+  Traders, Masters in Business, Prof G Markets, and Bloomberg Surveillance
+  (newest `podcast_feed_max` episodes, max 2 per show).
   Below that, **Podcast Trade Setups**: tickers a speaker voiced an explicit
   view on are extracted, run through the same TA engine (bullish score,
   support and resistance levels, chart), and written up as a thesis +
