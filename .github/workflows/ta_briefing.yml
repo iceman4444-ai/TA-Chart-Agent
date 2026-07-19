@@ -127,7 +127,7 @@ jobs:
           tail -n 14 .last-send > .last-send.tmp && mv .last-send.tmp .last-send
           git config user.name "TA Chart Agent"
           git config user.email "actions@github.com"
-          git add .last-send
+          git add .last-send picks_ledger.csv 2>/dev/null || git add .last-send
           git commit -m "Record ${{ steps.guard.outputs.slot }} send ${{ steps.guard.outputs.today }} [skip ci]" || exit 0
           git pull --rebase origin "${{ github.ref_name }}" || true
           git push origin "HEAD:${{ github.ref_name }}" || echo "::warning::marker push failed (next scheduled run may resend)"

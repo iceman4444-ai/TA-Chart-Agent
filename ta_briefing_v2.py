@@ -711,6 +711,7 @@ def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
                 "score": bullish_score(df, ind),
                 "support": support,
                 "breached": bool(support) and close < support,
+                "earnings_days": days_to_earnings(symbol),
             })
         except Exception as exc:
             log(f"portfolio: a position could not be analyzed — {exc}")
@@ -856,6 +857,153 @@ def resistance_level(df: pd.DataFrame, ind: dict) -> float | None:
         if n and col in df and pd.notna(df[col].iloc[-1]) and df[col].iloc[-1] > last_close:
             candidates.append(float(df[col].iloc[-1]))
     return min(candidates) if candidates else None
+
+
+def days_to_earnings(ticker: str, horizon: int = 45) -> int | None:
+    """Days until the next earnings report, or None if unknown/far out."""
+    try:
+        cal = yf.Ticker(ticker).calendar
+        dates = (cal or {}).get("Earnings Date") or []
+        if not isinstance(dates, (list, tuple)):
+            dates = [dates]
+        today = datetime.now(EASTERN).date()
+        best = None
+        for d in dates:
+            if hasattr(d, "date") and not isinstance(d, type(today)):
+                d = d.date()
+            delta = (d - today).days
+            if 0 <= delta <= horizon and (best is None or delta < best):
+                best = delta
+        return best
+    except Exception:
+        return None
+
+
+def earnings_tag(days: int | None, threshold: int = 10) -> str:
+    """Warning suffix for headings/status cells when earnings are close."""
+    if days is None or days > threshold:
+        return ""
+    return f" · ⚠️ earnings in {days}d"
+
+
+LEDGER_PATH = Path("picks_ledger.csv")
+
+
+def append_picks_ledger(summaries: list[dict], setups: list[dict]) -> None:
+    """Record today's picks and setups for the weekly scorecard.
+
+    The ledger holds only scan output (ticker, score, entry, support) —
+    never portfolio data — so it is safe to commit to the public repo.
+    """
+    import csv
+
+    existing = set()
+    if LEDGER_PATH.exists():
+        with LEDGER_PATH.open() as fh:
+            existing = {
+                (r["date"], r["kind"], r["ticker"]) for r in csv.DictReader(fh)
+            }
+    today = f"{datetime.now(EASTERN):%Y-%m-%d}"
+    rows = []
+    for s in summaries:
+        if "score" in s:
+            rows.append(
+                ("pick", s["ticker"], s["score"],
+                 float(str(s["close"]).replace(",", "")), s.get("support"))
+            )
+    for st in setups:
+        rows.append(("setup", st["ticker"], st["score"], st["close"], st.get("support")))
+    is_new = not LEDGER_PATH.exists()
+    added = 0
+    with LEDGER_PATH.open("a", newline="") as fh:
+        writer = csv.writer(fh)
+        if is_new:
+            writer.writerow(["date", "kind", "ticker", "score", "close", "support"])
+        for kind, ticker, score, close, support in rows:
+            if (today, kind, ticker) in existing:
+                continue
+            writer.writerow([today, kind, ticker, score, f"{close:.2f}",
+                             f"{support:.2f}" if support else ""])
+            added += 1
+    log(f"ledger: recorded {added} new entrie(s)")
+
+
+def build_scorecard(cfg: dict) -> str | None:
+    """HTML for the Weekly Scorecard: how past picks actually performed.
+
+    Grades ledger entries at least 7 days old: 1-week forward return,
+    return to date, and whether the recorded support broke after entry.
+    Returns None when there is nothing gradeable yet.
+    """
+    import csv
+
+    if not LEDGER_PATH.exists():
+        return None
+    with LEDGER_PATH.open() as fh:
+        rows = list(csv.DictReader(fh))
+    today = datetime.now(EASTERN).date()
+    graded, cache = [], {}
+    for r in rows[-400:]:
+        try:
+            entry_date = datetime.strptime(r["date"], "%Y-%m-%d").date()
+            age = (today - entry_date).days
+            if age < 7 or age > 90:
+                continue
+            ticker = r["ticker"]
+            if ticker not in cache:
+                cache[ticker] = fetch_history(ticker, 130)
+            df = cache[ticker]
+            entry = float(r["close"])
+            support = float(r["support"]) if r["support"] else None
+            after = df[df.index > pd.Timestamp(entry_date)]
+            if len(after) < 5:
+                continue
+            graded.append({
+                "score": float(r["score"]),
+                "week": float(after["Close"].iloc[4]) / entry - 1,
+                "to_date": float(df["Close"].iloc[-1]) / entry - 1,
+                "broke": bool(support) and bool((after["Close"] < support).any()),
+            })
+        except Exception:
+            continue
+    if not graded:
+        return None
+
+    def agg(items):
+        n = len(items)
+        return {
+            "n": n,
+            "hit": sum(1 for g in items if g["week"] > 0) / n * 100,
+            "week": sum(g["week"] for g in items) / n * 100,
+            "to_date": sum(g["to_date"] for g in items) / n * 100,
+            "broke": sum(1 for g in items if g["broke"]) / n * 100,
+        }
+
+    buckets = [("All picks", graded)]
+    high = [g for g in graded if g["score"] >= 4.0]
+    low = [g for g in graded if g["score"] < 4.0]
+    if high and low:
+        buckets += [("Score ≥ 4.0", high), ("Score < 4.0", low)]
+    block = (
+        "<h3 style='font-family:sans-serif'>Weekly Scorecard</h3>"
+        "<p style='max-width:860px;font-size:14px'>How signals from the "
+        "ledger performed (entries at least a week old, graded on the close "
+        "at signal time):</p>"
+        "<table border='1' cellpadding='6' cellspacing='0' "
+        "style='border-collapse:collapse;font-size:14px'>"
+        "<tr style='background:#eceff1'><th>Bucket</th><th>N</th>"
+        "<th>1-week hit rate</th><th>Avg 1-week</th><th>Avg to date</th>"
+        "<th>Support broke</th></tr>"
+    )
+    for name, items in buckets:
+        a = agg(items)
+        block += (
+            f"<tr><td>{name}</td><td>{a['n']}</td><td>{a['hit']:.0f}%</td>"
+            f"<td>{a['week']:+.1f}%</td><td>{a['to_date']:+.1f}%</td>"
+            f"<td>{a['broke']:.0f}%</td></tr>"
+        )
+    block += "</table>"
+    return block
 
 
 def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
@@ -1158,7 +1306,10 @@ def llm_commentary(
                 "zone above the support level, the first resistance to watch, "
                 "and that a decisive close below the support invalidates the "
                 "setup (for a bearish podcast view, frame it as a name to "
-                "avoid or de-risk rather than a long setup). If tweets are "
+                "avoid or de-risk rather than a long setup). Wherever "
+                "days_to_earnings is 7 or less, the commentary or plan MUST "
+                "flag the imminent earnings report as event risk that can gap "
+                "through technical levels. If tweets are "
                 "provided, treat them as unverified crowd chatter: you may "
                 "note notable sentiment as 'X chatter...', never as fact, and "
                 "ignore anything spammy. Ground every claim ONLY in "
@@ -1227,6 +1378,7 @@ def build_html(
     podcast: dict | None = None,
     setups: list[dict] | None = None,
     positions: list[dict] | None = None,
+    scorecard: str | None = None,
 ) -> str:
     owned = {p["ticker"] for p in positions} if positions else set()
     has_score = "score" in summaries[0]
@@ -1262,6 +1414,7 @@ def build_html(
         )
         for p in positions:
             status = "⚠️ below support" if p["breached"] else "✅ above support"
+            status += earnings_tag(p.get("earnings_days"))
             support_cell = f"{p['support']:,.2f}" if p.get("support") else "—"
             block += (
                 f"<tr><td><b>{p['ticker']}</b></td><td>{p['qty']:g}</td>"
@@ -1275,6 +1428,7 @@ def build_html(
         heading_line = ticker + (f" — bullish score {s['score']}" if has_score else "")
         if ticker in owned:
             heading_line += " · in your portfolio"
+        heading_line += earnings_tag(s.get("earnings_days"))
         block = f"<h3 style='font-family:sans-serif'>{heading_line}</h3>"
         if s.get("commentary"):
             block += (
@@ -1323,6 +1477,7 @@ def build_html(
                 title += f" · podcast view: {st['sentiment']}"
             if st["ticker"] in owned:
                 title += " · in your portfolio"
+            title += earnings_tag(st.get("earnings_days"))
             block += f"<h4 style='font-family:sans-serif;margin-bottom:4px'>{title}</h4>"
             if st.get("thesis"):
                 block += (
@@ -1341,6 +1496,8 @@ def build_html(
                     f"<img src='cid:{cids[st['ticker']]}' width='860' style='max-width:100%'/>"
                 )
         sections.append(block)
+    if scorecard:
+        sections.append(scorecard)
     charts = "".join(sections)
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
@@ -1365,6 +1522,7 @@ def build_email(
     podcast: dict | None = None,
     setups: list[dict] | None = None,
     positions: list[dict] | None = None,
+    scorecard: str | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -1381,7 +1539,10 @@ def build_email(
             market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
     msg.add_alternative(
-        build_html(summaries, cids, generated, heading, market_html, podcast, setups, positions),
+        build_html(
+            summaries, cids, generated, heading, market_html, podcast, setups,
+            positions, scorecard,
+        ),
         subtype="html",
     )
     for ticker, path in chart_paths.items():
@@ -1478,6 +1639,7 @@ def main(argv: list[str] | None = None) -> int:
                 summary["support"] = support_level(df, ind)
                 summary["commentary"] = technical_commentary(df, ind)
                 summary["actionable"] = actionable_line(summary["support"])
+                summary["earnings_days"] = days_to_earnings(ticker)
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -1492,6 +1654,7 @@ def main(argv: list[str] | None = None) -> int:
     podcast = None
     podcast_setups = []
     positions = []
+    scorecard = None
     if args.scan:
         positions = analyze_positions(cfg, ind)
         overview = market_overview()
@@ -1510,6 +1673,7 @@ def main(argv: list[str] | None = None) -> int:
                 "bullish_score": s.get("score"),
                 "last_close": s["close"],
                 "support_level": s.get("support"),
+                "days_to_earnings": s.get("earnings_days"),
                 "technicals": s.get("commentary"),
                 "headlines": s.get("news", []),
             }
@@ -1551,6 +1715,7 @@ def main(argv: list[str] | None = None) -> int:
                         "close": round(float(df["Close"].iloc[-1]), 2),
                         "support": support_level(df, ind),
                         "resistance": resistance_level(df, ind),
+                        "earnings_days": days_to_earnings(tick),
                     }
                     setup["plan"] = default_setup_plan(setup)
                     podcast_setups.append(setup)
@@ -1590,8 +1755,23 @@ def main(argv: list[str] | None = None) -> int:
         if market_text or market_path:
             market = {"text": market_text, "path": market_path}
 
+        # Weekly Scorecard: Friday afternoon recaps grade the ledger.
+        now_et = datetime.now(EASTERN)
+        if (now_et.weekday() == 4 and now_et.hour >= 12) or os.environ.get(
+            "TA_FORCE_SCORECARD"
+        ):
+            try:
+                scorecard = build_scorecard(cfg)
+                if scorecard:
+                    log("scorecard: graded ledger included in this recap")
+                else:
+                    log("scorecard: no gradeable ledger entries yet")
+            except Exception as exc:
+                log(f"scorecard failed — {exc}")
+
     msg = build_email(
-        cfg, summaries, chart_paths, heading, market, podcast, podcast_setups, positions
+        cfg, summaries, chart_paths, heading, market, podcast, podcast_setups,
+        positions, scorecard,
     )
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
@@ -1607,7 +1787,7 @@ def main(argv: list[str] | None = None) -> int:
         preview.write_text(
             build_html(
                 summaries, cids, generated, heading, preview_market, podcast,
-                podcast_setups, positions,
+                podcast_setups, positions, scorecard,
             ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")
@@ -1616,6 +1796,11 @@ def main(argv: list[str] | None = None) -> int:
     else:
         send_email(cfg, msg)
         log(f"email sent to {', '.join(cfg['email']['to_addrs'])}")
+        if args.scan:
+            try:
+                append_picks_ledger(summaries, podcast_setups)
+            except Exception as exc:
+                log(f"ledger append failed — {exc}")
 
     if failures:
         log(f"completed with failures: {', '.join(failures)}")
