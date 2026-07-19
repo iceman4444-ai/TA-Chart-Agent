@@ -82,7 +82,7 @@ mode `watchlist`, using the `tickers` list.)
   **Investment Podcast Highlights** section: the newest such email (e.g.
   sent by a podcast-summarizing Claude project) distilled into bullets,
   joined by recent episodes (titles + show notes) from the
-  `research.podcast_feeds` RSS network — 12 verified shows including Odd
+  `research.podcast_feeds` RSS network — 14 verified shows including Founders (David Senra), The Market Huddle, Odd
   Lots, Invest Like the Best, All-In, Animal Spirits, We Study
   Billionaires, Meb Faber, MacroVoices, Forward Guidance, Chat With
   Traders, Masters in Business, Prof G Markets, and Bloomberg Surveillance

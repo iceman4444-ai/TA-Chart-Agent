@@ -67,6 +67,8 @@ research:
     - https://omny.fm/shows/masters-in-business/playlists/podcast.rss  # Masters in Business
     - https://feeds.megaphone.fm/profgmarkets                # Prof G Markets
     - https://omny.fm/shows/bloomberg-surveillance/playlists/podcast.rss  # Bloomberg Surveillance
+    - https://feeds.megaphone.fm/DSLLC6297708582             # Founders (David Senra)
+    - https://markethuddle.com/feed/podcast/                 # The Market Huddle
   podcast_feed_days: 7   # episode recency window
   podcast_feed_max: 10   # newest episodes kept across all feeds
   podcast_feed_chars: 2000
