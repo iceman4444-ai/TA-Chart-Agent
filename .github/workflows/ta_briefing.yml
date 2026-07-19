@@ -137,6 +137,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ta-briefing-charts
-          path: output/
+          # PNGs only: the preview HTML can contain portfolio data, and
+          # artifacts on a public repo are downloadable by anyone.
+          path: output/*.png
           retention-days: 14
 # vim: set ft=yaml:

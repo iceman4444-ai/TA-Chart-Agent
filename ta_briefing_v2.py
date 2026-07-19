@@ -609,6 +609,115 @@ def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
     return capped
 
 
+def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
+    """Executed trades parsed out of Fidelity confirmation emails.
+
+    Privacy: contents are processed in-memory only; callers must never log
+    or persist symbols, quantities, or prices.
+    """
+    if not confirm_notes or not os.environ.get("ANTHROPIC_API_KEY"):
+        return []
+    try:
+        import anthropic
+    except ImportError:
+        return []
+    schema = {
+        "type": "object",
+        "properties": {
+            "trades": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "action": {"type": "string", "enum": ["buy", "sell"]},
+                        "symbol": {"type": "string"},
+                        "quantity": {"type": "number"},
+                        "price": {"type": "number"},
+                        "date": {"type": "string"},
+                    },
+                    "required": ["action", "symbol", "quantity", "price", "date"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["trades"],
+        "additionalProperties": False,
+    }
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=16000,
+            thinking={"type": "adaptive"},
+            system=(
+                "Extract EXECUTED equity/ETF trades from these brokerage "
+                "trade-confirmation emails. Include a trade only when the "
+                "action (buy/sell), the US ticker symbol, and the share "
+                "quantity are explicitly stated; use 0 for a missing price "
+                "and the email's date if the trade date is absent. Ignore "
+                "pending orders, cancellations, options, bonds, money-market "
+                "sweeps, and marketing emails. Return an empty list if none."
+            ),
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+            messages=[{"role": "user", "content": json.dumps(confirm_notes)}],
+        )
+        return json.loads(next(b.text for b in response.content if b.type == "text"))["trades"]
+    except Exception as exc:
+        log(f"trade parsing failed — {exc}")
+        return []
+
+
+def build_positions(trades: list[dict]) -> dict[str, float]:
+    """Net open long positions from a list of executed trades."""
+    positions: dict[str, float] = {}
+    for trade in trades:
+        symbol = (trade.get("symbol") or "").upper().strip()
+        if not symbol:
+            continue
+        signed = trade["quantity"] * (1 if trade["action"] == "buy" else -1)
+        positions[symbol] = positions.get(symbol, 0.0) + signed
+    return {s: q for s, q in positions.items() if q > 1e-4}
+
+
+def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
+    """Portfolio rows for the email: each holding through the TA engine.
+
+    Support is computed through *yesterday's* bar so that today's close can
+    be tested against it — `breached` means today closed below the support
+    the position had coming into the session.
+    """
+    portfolio = cfg.get("portfolio") or {}
+    if not portfolio.get("enabled", True):
+        return []
+    confirm_notes = _gmail_notes(
+        cfg,
+        portfolio.get("gmail_search", "from:fidelity confirmation newer_than:90d"),
+        portfolio.get("max_emails", 20),
+        3000,
+    )
+    trades = llm_parse_trades(confirm_notes)
+    positions = build_positions(trades)
+    log(f"portfolio: parsed {len(trades)} trade(s) into {len(positions)} open position(s)")
+    rows = []
+    for symbol, qty in positions.items():
+        try:
+            df = add_indicators(fetch_history(symbol, cfg["lookback_days"]), ind)
+            close = float(df["Close"].iloc[-1])
+            support = support_level(df.iloc[:-1], ind) if len(df) > 2 else None
+            rows.append({
+                "ticker": symbol,
+                "qty": qty,
+                "close": close,
+                "score": bullish_score(df, ind),
+                "support": support,
+                "breached": bool(support) and close < support,
+            })
+        except Exception as exc:
+            log(f"portfolio: a position could not be analyzed — {exc}")
+    rows.sort(key=lambda r: (not r["breached"], -r["score"]))
+    return rows
+
+
 def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
     """Distinct guest names interviewed in the recent episode notes."""
     if not podcast_notes or not os.environ.get("ANTHROPIC_API_KEY"):
@@ -1117,7 +1226,9 @@ def build_html(
     market: dict | None = None,
     podcast: dict | None = None,
     setups: list[dict] | None = None,
+    positions: list[dict] | None = None,
 ) -> str:
+    owned = {p["ticker"] for p in positions} if positions else set()
     has_score = "score" in summaries[0]
     rows = []
     for s in summaries:
@@ -1134,10 +1245,37 @@ def build_html(
             f"<td>{s['trend']} {s['slow_name']}</td></tr>"
         )
     sections = []
+    if positions:
+        breached = [p["ticker"] for p in positions if p["breached"]]
+        block = "<h3 style='font-family:sans-serif'>Your Positions</h3>"
+        if breached:
+            block += (
+                "<p style='max-width:860px;font-size:14px'><b>⚠️ Support broken: "
+                + ", ".join(breached)
+                + " closed below the support carried into today — bullish structure is broken.</b></p>"
+            )
+        block += (
+            "<table border='1' cellpadding='6' cellspacing='0' "
+            "style='border-collapse:collapse;font-size:14px'>"
+            "<tr style='background:#eceff1'><th>Ticker</th><th>Shares</th><th>Last</th>"
+            "<th>Score</th><th>Support</th><th>Status</th></tr>"
+        )
+        for p in positions:
+            status = "⚠️ below support" if p["breached"] else "✅ above support"
+            support_cell = f"{p['support']:,.2f}" if p.get("support") else "—"
+            block += (
+                f"<tr><td><b>{p['ticker']}</b></td><td>{p['qty']:g}</td>"
+                f"<td>{p['close']:,.2f}</td><td>{p['score']}</td>"
+                f"<td>{support_cell}</td><td>{status}</td></tr>"
+            )
+        block += "</table>"
+        sections.append(block)
     for s in summaries:
         ticker = s["ticker"]
-        heading = ticker + (f" — bullish score {s['score']}" if has_score else "")
-        block = f"<h3 style='font-family:sans-serif'>{heading}</h3>"
+        heading_line = ticker + (f" — bullish score {s['score']}" if has_score else "")
+        if ticker in owned:
+            heading_line += " · in your portfolio"
+        block = f"<h3 style='font-family:sans-serif'>{heading_line}</h3>"
         if s.get("commentary"):
             block += (
                 "<p style='max-width:860px;font-size:14px'>"
@@ -1183,6 +1321,8 @@ def build_html(
             title = f"{st['ticker']} — bullish score {st['score']}"
             if st.get("sentiment"):
                 title += f" · podcast view: {st['sentiment']}"
+            if st["ticker"] in owned:
+                title += " · in your portfolio"
             block += f"<h4 style='font-family:sans-serif;margin-bottom:4px'>{title}</h4>"
             if st.get("thesis"):
                 block += (
@@ -1224,6 +1364,7 @@ def build_email(
     market: dict | None = None,
     podcast: dict | None = None,
     setups: list[dict] | None = None,
+    positions: list[dict] | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -1240,7 +1381,7 @@ def build_email(
             market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
     msg.add_alternative(
-        build_html(summaries, cids, generated, heading, market_html, podcast, setups),
+        build_html(summaries, cids, generated, heading, market_html, podcast, setups, positions),
         subtype="html",
     )
     for ticker, path in chart_paths.items():
@@ -1350,7 +1491,9 @@ def main(argv: list[str] | None = None) -> int:
     market = None
     podcast = None
     podcast_setups = []
+    positions = []
     if args.scan:
+        positions = analyze_positions(cfg, ind)
         overview = market_overview()
         market_text = technical_market_summary(overview)
         market_path = None
@@ -1447,7 +1590,9 @@ def main(argv: list[str] | None = None) -> int:
         if market_text or market_path:
             market = {"text": market_text, "path": market_path}
 
-    msg = build_email(cfg, summaries, chart_paths, heading, market, podcast, podcast_setups)
+    msg = build_email(
+        cfg, summaries, chart_paths, heading, market, podcast, podcast_setups, positions
+    )
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
         # PNGs instead of cid: attachments.
@@ -1461,7 +1606,8 @@ def main(argv: list[str] | None = None) -> int:
         generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
         preview.write_text(
             build_html(
-                summaries, cids, generated, heading, preview_market, podcast, podcast_setups
+                summaries, cids, generated, heading, preview_market, podcast,
+                podcast_setups, positions,
             ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")
