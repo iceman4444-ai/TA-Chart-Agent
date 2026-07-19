@@ -609,6 +609,124 @@ def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
     return capped
 
 
+def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
+    """Distinct guest names interviewed in the recent episode notes."""
+    if not podcast_notes or not os.environ.get("ANTHROPIC_API_KEY"):
+        return []
+    try:
+        import anthropic
+    except ImportError:
+        return []
+    schema = {
+        "type": "object",
+        "properties": {"guests": {"type": "array", "items": {"type": "string"}}},
+        "required": ["guests"],
+        "additionalProperties": False,
+    }
+    try:
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=16000,
+            thinking={"type": "adaptive"},
+            system=(
+                "From these podcast episode notes, list the distinct GUEST "
+                "people interviewed — real person names only, most "
+                "market-relevant first, at most 8. Exclude the shows' regular "
+                "hosts and co-hosts (e.g. the person a show is named after), "
+                "companies, and tickers. Return an empty list if none."
+            ),
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+            messages=[{"role": "user", "content": json.dumps(podcast_notes)}],
+        )
+        guests = json.loads(next(b.text for b in response.content if b.type == "text"))["guests"]
+        log("guests identified: " + (", ".join(guests) or "none"))
+        return guests
+    except Exception as exc:
+        log(f"guest extraction failed — {exc}")
+        return []
+
+
+def fetch_guest_crossovers(cfg: dict, podcast_notes: list[dict]) -> list[dict]:
+    """Fresh interviews of the network's guests on OTHER shows.
+
+    For each guest identified in the recent episodes, the free iTunes episode
+    search finds their appearances across podcasts; episodes from shows not
+    already in the network (within the recency window) join the intel.
+    """
+    import html as html_lib
+    import re
+    from datetime import timezone
+
+    import requests
+
+    research = cfg.get("research") or {}
+    if not research.get("guest_crossover", True) or not podcast_notes:
+        return []
+    guests = llm_extract_guests(podcast_notes)[: research.get("guest_max", 5)]
+    if not guests:
+        return []
+    known_shows = {n["subject"].split(":")[0].strip().lower() for n in podcast_notes}
+    window = timedelta(days=research.get("crossover_days", 21))
+    now = datetime.now(timezone.utc)
+    notes, seen = [], set()
+    for guest in guests:
+        try:
+            resp = requests.get(
+                "https://itunes.apple.com/search",
+                params={
+                    "term": guest,
+                    "media": "podcast",
+                    "entity": "podcastEpisode",
+                    "limit": 12,
+                },
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                continue
+            for ep in resp.json().get("results", []):
+                show = (ep.get("collectionName") or "").strip()
+                title = (ep.get("trackName") or "").strip()
+                if not show or not title or show.lower() in known_shows:
+                    continue
+                blob = f"{title} {ep.get('description') or ''}".lower()
+                if guest.lower() not in blob:
+                    continue
+                try:
+                    when = datetime.fromisoformat(
+                        (ep.get("releaseDate") or "").replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    continue
+                if now - when > window:
+                    continue
+                key = (show.lower(), title.lower())
+                if key in seen:
+                    continue
+                seen.add(key)
+                desc = re.sub(
+                    r"\s+", " ",
+                    html_lib.unescape(re.sub(r"<[^>]+>", " ", ep.get("description") or "")),
+                ).strip()
+                notes.append({
+                    "subject": f"[guest crossover: {guest}] {show}: {title}",
+                    "date": (ep.get("releaseDate") or "")[:10],
+                    "excerpt": desc[: research.get("podcast_feed_chars", 2000)],
+                    "_ts": when.timestamp(),
+                })
+        except Exception as exc:
+            log(f"crossover search failed for {guest} — {exc}")
+    notes.sort(key=lambda n: n["_ts"], reverse=True)
+    notes = notes[: research.get("crossover_max", 5)]
+    for note in notes:
+        note.pop("_ts", None)
+    log(
+        "guest crossovers: "
+        + ("; ".join(n["subject"][:70] for n in notes) if notes else "none found")
+    )
+    return notes
+
+
 def resistance_level(df: pd.DataFrame, ind: dict) -> float | None:
     """Nearest meaningful resistance above the last close.
 
@@ -1256,6 +1374,7 @@ def main(argv: list[str] | None = None) -> int:
         ]
         research_notes = fetch_research_notes(cfg)
         podcast_notes = fetch_podcast_notes(cfg) + fetch_podcast_feed_notes(cfg)
+        podcast_notes += fetch_guest_crossovers(cfg, podcast_notes)
         if podcast_notes:
             sources = "; ".join(n["subject"] for n in podcast_notes[:3])
             if len(podcast_notes) > 3:

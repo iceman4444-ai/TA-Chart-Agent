@@ -56,6 +56,7 @@ research:
   # feeds join the inbox messages as podcast intel. All URLs verified live.
   podcast_feeds:
     - https://omny.fm/shows/odd-lots/playlists/podcast.rss   # Bloomberg Odd Lots
+    - https://feeds.megaphone.fm/CLS2859450455               # Invest Like the Best
     - https://allinchamathjason.libsyn.com/rss               # All-In
     - https://animalspiritspod.libsyn.com/rss                # Animal Spirits
     - https://theinvestorspodcast.libsyn.com/rss             # We Study Billionaires
@@ -69,6 +70,13 @@ research:
   podcast_feed_days: 7   # episode recency window
   podcast_feed_max: 10   # newest episodes kept across all feeds
   podcast_feed_chars: 2000
+  # Guest cross-pollination: guests appearing in the network's recent
+  # episodes are looked up on the iTunes episode search, and their fresh
+  # interviews on OTHER shows join the intel too.
+  guest_crossover: true
+  guest_max: 5        # guests followed per run
+  crossover_days: 21  # recency window for cross-show interviews
+  crossover_max: 5    # crossover episode notes kept
   # X/Twitter chatter (official API v2; requires an X_BEARER_TOKEN secret —
   # paid X API tier with search access). Skipped silently when absent.
   twitter_enabled: true

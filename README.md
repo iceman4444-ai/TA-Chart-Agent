@@ -82,11 +82,15 @@ mode `watchlist`, using the `tickers` list.)
   **Investment Podcast Highlights** section: the newest such email (e.g.
   sent by a podcast-summarizing Claude project) distilled into bullets,
   joined by recent episodes (titles + show notes) from the
-  `research.podcast_feeds` RSS network — 11 verified shows including Odd
-  Lots, All-In, Animal Spirits, We Study
+  `research.podcast_feeds` RSS network — 12 verified shows including Odd
+  Lots, Invest Like the Best, All-In, Animal Spirits, We Study
   Billionaires, Meb Faber, MacroVoices, Forward Guidance, Chat With
   Traders, Masters in Business, Prof G Markets, and Bloomberg Surveillance
-  (newest `podcast_feed_max` episodes, max 2 per show).
+  (newest `podcast_feed_max` episodes, max 2 per show). Guest
+  cross-pollination (`research.guest_crossover`) then follows the guests:
+  people interviewed in those episodes are looked up on the iTunes episode
+  search, and their recent interviews on shows *outside* the network join
+  the intel as `[guest crossover]` notes.
   Below that, **Podcast Trade Setups**: tickers a speaker voiced an explicit
   view on are extracted, run through the same TA engine (bullish score,
   support and resistance levels, chart), and written up as a thesis +
