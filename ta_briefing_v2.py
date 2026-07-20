@@ -897,15 +897,25 @@ def vol_context(ticker: str, df: pd.DataFrame) -> dict:
     try:
         tk = yf.Ticker(ticker)
         today = datetime.now(EASTERN).date()
-        expiries = []
+        spot = float(df["Close"].iloc[-1])
+        all_exps = []
         for e in tk.options or []:
             days = (datetime.strptime(e, "%Y-%m-%d").date() - today).days
-            if days >= 14:
-                expiries.append((abs(days - 35), days, e))
-        if expiries:
-            _, days, expiry = min(expiries)
-            chain = tk.option_chain(expiry)
-            spot = float(df["Close"].iloc[-1])
+            if days >= 0:
+                all_exps.append((days, e))
+        all_exps.sort()
+        chains = {}
+
+        def get_chain(expiry):
+            if expiry not in chains:
+                chains[expiry] = tk.option_chain(expiry)
+            return chains[expiry]
+
+        # ATM implied vol from the expiry nearest ~35 days out
+        iv_candidates = [(abs(d - 35), d, e) for d, e in all_exps if d >= 14]
+        if iv_candidates:
+            _, days, expiry = min(iv_candidates)
+            chain = get_chain(expiry)
             ivs = []
             for side in (chain.calls, chain.puts):
                 side = side[side["impliedVolatility"] > 0.01]
@@ -916,9 +926,64 @@ def vol_context(ticker: str, df: pd.DataFrame) -> dict:
             if ivs:
                 out["iv"] = round(sum(ivs) / len(ivs) * 100, 1)
                 out["iv_days"] = days
+
+        # Day-level flow read across the two nearest expiries
+        call_vol = put_vol = otm_call_vol = 0
+        unusual = []
+        for _, expiry in all_exps[:2]:
+            chain = get_chain(expiry)
+            calls, puts = chain.calls, chain.puts
+            cv = calls["volume"].fillna(0)
+            call_vol += int(cv.sum())
+            put_vol += int(puts["volume"].fillna(0).sum())
+            otm = calls[calls["strike"] > spot]
+            otm_call_vol += int(otm["volume"].fillna(0).sum())
+            oi = calls["openInterest"].fillna(0)
+            hot = calls[(cv > oi) & (cv >= 200)]
+            for _, row in hot.iterrows():
+                unusual.append((
+                    expiry, float(row["strike"]),
+                    int(row["volume"]), int(row["openInterest"] or 0),
+                ))
+        if call_vol + put_vol >= 500:  # too illiquid to read below this
+            unusual.sort(key=lambda u: -u[2])
+            out["flow"] = {
+                "cp_ratio": round(call_vol / max(put_vol, 1), 1),
+                "call_vol": call_vol,
+                "put_vol": put_vol,
+                "otm_call_share": round(otm_call_vol / max(call_vol, 1) * 100),
+                "unusual": unusual[:2],
+            }
     except Exception:
         pass
     return out
+
+
+def flow_note(flow: dict | None) -> str:
+    """Human-readable options-flow tilt from day-level chain volume."""
+    if not flow:
+        return ""
+    cp, otm = flow["cp_ratio"], flow["otm_call_share"]
+    if cp >= 2 and otm >= 50:
+        verdict = "flow leans clearly bullish"
+    elif cp >= 1.5:
+        verdict = "flow tilts bullish"
+    elif cp <= 0.7:
+        verdict = "flow tilts defensive (put-heavy)"
+    else:
+        verdict = "flow is balanced"
+    bits = [f"call/put volume {cp}:1 across the nearest expiries"]
+    if otm >= 60:
+        bits.append(f"{otm}% of call volume in out-of-the-money strikes")
+    for expiry, strike, vol, oi in flow.get("unusual", []):
+        bits.append(
+            f"heavy activity in the {expiry} {strike:g} calls "
+            f"({vol:,} traded vs {oi:,} open interest — likely new positioning)"
+        )
+    return (
+        f"{verdict} — " + "; ".join(bits)
+        + ". (Day-level volume cannot distinguish buyers from sellers; treat as a tilt, not proof.)"
+    )
 
 
 def options_note(vol: dict, support: float | None, resistance: float | None,
@@ -1489,7 +1554,13 @@ def llm_commentary(
                 "data (realized HV vs ATM IV) and the VIX in market_stats to "
                 "set options context: rich IV favors defined-risk premium "
                 "selling, cheap IV favors long calls or debit spreads — "
-                "always defined-risk, never naked. If tweets are "
+                "always defined-risk, never naked. The volatility data may "
+                "include 'flow' (call/put volume ratio, OTM call share, and "
+                "strikes where volume exceeded open interest): treat bullish "
+                "flow as corroborating evidence when it agrees with the "
+                "technical setup and note the divergence when it doesn't, but "
+                "never as proof — day-level volume cannot distinguish buyers "
+                "from sellers. If tweets are "
                 "provided, treat them as unverified crowd chatter: you may "
                 "note notable sentiment as 'X chatter...', never as fact, and "
                 "ignore anything spammy. Ground every claim ONLY in "
@@ -1631,6 +1702,11 @@ def build_html(
                 "<p style='max-width:860px;font-size:13px'>"
                 f"<i>Options: {s['options_note']}</i></p>"
             )
+        if s.get("flow_note"):
+            block += (
+                "<p style='max-width:860px;font-size:13px'>"
+                f"<i>Options flow: {s['flow_note']}</i></p>"
+            )
         if s.get("news"):
             headlines = "".join(
                 f"<li>{n['title']} <span style='color:#777'>({n['source']}, {n['date']})</span></li>"
@@ -1687,6 +1763,11 @@ def build_html(
                 block += (
                     "<p style='max-width:860px;font-size:13px'>"
                     f"<i>Options: {st['options_note']}</i></p>"
+                )
+            if st.get("flow_note"):
+                block += (
+                    "<p style='max-width:860px;font-size:13px'>"
+                    f"<i>Options flow: {st['flow_note']}</i></p>"
                 )
             if st["ticker"] in cids:
                 block += (
@@ -1849,6 +1930,7 @@ def main(argv: list[str] | None = None) -> int:
                 summary["options_note"] = options_note(
                     vol, summary["support"], summary["resistance"], summary["earnings_days"]
                 )
+                summary["flow_note"] = flow_note(vol.get("flow"))
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -1939,6 +2021,7 @@ def main(argv: list[str] | None = None) -> int:
                     setup["options_note"] = options_note(
                         vol, setup["support"], setup["resistance"], setup["earnings_days"]
                     )
+                    setup["flow_note"] = flow_note(vol.get("flow"))
                     setup["plan"] = default_setup_plan(setup)
                     podcast_setups.append(setup)
                     picked.add(tick)
