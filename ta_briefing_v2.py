@@ -393,16 +393,18 @@ SECTOR_ETFS = {
 def market_overview() -> dict:
     """Daily and 1-month moves for SPY, QQQ, and the S&P sector ETFs."""
     stats, frames = {}, {}
-    for sym in ("SPY", "QQQ", *SECTOR_ETFS):
+    for sym in ("SPY", "QQQ", "^VIX", *SECTOR_ETFS):
         try:
             df = fetch_history(sym, 90)
             close = df["Close"]
             stats[sym] = {
-                "name": SECTOR_ETFS.get(sym, sym),
+                "name": "VIX" if sym == "^VIX" else SECTOR_ETFS.get(sym, sym),
                 "day_pct": round((close.iloc[-1] / close.iloc[-2] - 1) * 100, 2),
                 "month_pct": round((close.iloc[-1] / close.iloc[-22] - 1) * 100, 2)
                 if len(close) > 22 else None,
             }
+            if sym == "^VIX":
+                stats[sym]["level"] = round(float(close.iloc[-1]), 1)
             frames[sym] = df
         except Exception as exc:
             log(f"{sym}: market overview fetch failed — {exc}")
@@ -667,16 +669,31 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
         return []
 
 
-def build_positions(trades: list[dict]) -> dict[str, float]:
-    """Net open long positions from a list of executed trades."""
-    positions: dict[str, float] = {}
+def build_positions(trades: list[dict]) -> dict[str, dict]:
+    """Net open long positions (with average buy cost) from executed trades."""
+    lots: dict[str, dict] = {}
     for trade in trades:
         symbol = (trade.get("symbol") or "").upper().strip()
         if not symbol:
             continue
-        signed = trade["quantity"] * (1 if trade["action"] == "buy" else -1)
-        positions[symbol] = positions.get(symbol, 0.0) + signed
-    return {s: q for s, q in positions.items() if q > 1e-4}
+        rec = lots.setdefault(symbol, {"qty": 0.0, "cost_qty": 0.0, "cost_amt": 0.0})
+        qty = trade["quantity"]
+        if trade["action"] == "buy":
+            rec["qty"] += qty
+            price = trade.get("price") or 0
+            if price > 0:
+                rec["cost_qty"] += qty
+                rec["cost_amt"] += qty * price
+        else:
+            rec["qty"] -= qty
+    return {
+        s: {
+            "qty": r["qty"],
+            "avg_cost": (r["cost_amt"] / r["cost_qty"]) if r["cost_qty"] else None,
+        }
+        for s, r in lots.items()
+        if r["qty"] > 1e-4
+    }
 
 
 def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
@@ -699,18 +716,22 @@ def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
     positions = build_positions(trades)
     log(f"portfolio: parsed {len(trades)} trade(s) into {len(positions)} open position(s)")
     rows = []
-    for symbol, qty in positions.items():
+    for symbol, lot in positions.items():
         try:
             df = add_indicators(fetch_history(symbol, cfg["lookback_days"]), ind)
             close = float(df["Close"].iloc[-1])
             support = support_level(df.iloc[:-1], ind) if len(df) > 2 else None
+            avg_cost = lot.get("avg_cost")
             rows.append({
                 "ticker": symbol,
-                "qty": qty,
+                "qty": lot["qty"],
                 "close": close,
+                "avg_cost": avg_cost,
+                "losing": bool(avg_cost) and close < avg_cost,
                 "score": bullish_score(df, ind),
                 "support": support,
                 "breached": bool(support) and close < support,
+                "below_200": below_200day(df, ind),
                 "earnings_days": days_to_earnings(symbol),
             })
         except Exception as exc:
@@ -857,6 +878,98 @@ def resistance_level(df: pd.DataFrame, ind: dict) -> float | None:
         if n and col in df and pd.notna(df[col].iloc[-1]) and df[col].iloc[-1] > last_close:
             candidates.append(float(df[col].iloc[-1]))
     return min(candidates) if candidates else None
+
+
+def vol_context(ticker: str, df: pd.DataFrame) -> dict:
+    """Realized and implied volatility for options framing.
+
+    HV20/HV60 are annualized realized vols from closes; IV is the at-the-money
+    implied vol from the option chain expiring ~1 month out (None when the
+    chain is unavailable).
+    """
+    rets = df["Close"].pct_change().dropna()
+    out = {
+        "hv20": round(float(rets.tail(20).std() * np.sqrt(252)) * 100, 1),
+        "hv60": round(float(rets.tail(60).std() * np.sqrt(252)) * 100, 1),
+        "iv": None,
+        "iv_days": None,
+    }
+    try:
+        tk = yf.Ticker(ticker)
+        today = datetime.now(EASTERN).date()
+        expiries = []
+        for e in tk.options or []:
+            days = (datetime.strptime(e, "%Y-%m-%d").date() - today).days
+            if days >= 14:
+                expiries.append((abs(days - 35), days, e))
+        if expiries:
+            _, days, expiry = min(expiries)
+            chain = tk.option_chain(expiry)
+            spot = float(df["Close"].iloc[-1])
+            ivs = []
+            for side in (chain.calls, chain.puts):
+                side = side[side["impliedVolatility"] > 0.01]
+                if len(side):
+                    ivs.append(float(
+                        side.iloc[(side["strike"] - spot).abs().argmin()]["impliedVolatility"]
+                    ))
+            if ivs:
+                out["iv"] = round(sum(ivs) / len(ivs) * 100, 1)
+                out["iv_days"] = days
+    except Exception:
+        pass
+    return out
+
+
+def options_note(vol: dict, support: float | None, resistance: float | None,
+                 earnings_days: int | None) -> str:
+    """Rule-based options structure suggestion from the vol picture."""
+    hv = vol.get("hv20")
+    iv = vol.get("iv")
+    if iv and hv:
+        ratio = iv / hv if hv else None
+        base = f"{vol['iv_days']}d ATM IV {iv:.0f}% vs 20d realized {hv:.0f}%"
+        if ratio and ratio >= 1.25:
+            stance = (
+                "IV is rich — defined-risk premium selling (e.g. a bull put spread "
+                + (f"struck below support {support:,.2f}" if support else "below support")
+                + ") is favored over buying calls"
+            )
+        elif ratio and ratio <= 0.9:
+            stance = (
+                "IV is cheap — long calls or call debit spreads "
+                + (f"toward resistance {resistance:,.2f}" if resistance else "")
+                + " offer efficient upside with defined risk"
+            )
+        else:
+            stance = "IV is roughly fair — call debit spreads balance cost and theta"
+        note = f"{base}; {stance}"
+    elif hv:
+        note = f"20d realized vol {hv:.0f}% (option chain unavailable for IV)"
+    else:
+        return ""
+    if earnings_days is not None and earnings_days <= 10:
+        note += f"; earnings in {earnings_days}d — IV crush risk for long premium held through the print"
+    return note
+
+
+def reward_risk(close: float, support: float | None, resistance: float | None) -> float | None:
+    """PTJ-style asymmetry: upside to first resistance per unit of downside to support."""
+    if not support or not resistance or close <= support or resistance <= close:
+        return None
+    return round((resistance - close) / (close - support), 1)
+
+
+def ptj_tag(below_200: bool) -> str:
+    return " · ⛔ below 200-day" if below_200 else ""
+
+
+def below_200day(df: pd.DataFrame, ind: dict) -> bool:
+    long = ind.get("sma_long")
+    col = f"SMA{long}" if long else None
+    if not col or col not in df or pd.isna(df[col].iloc[-1]):
+        return False
+    return float(df["Close"].iloc[-1]) < float(df[col].iloc[-1])
 
 
 def days_to_earnings(ticker: str, horizon: int = 45) -> int | None:
@@ -1062,14 +1175,23 @@ def fetch_news(ticker: str, limit: int = 3) -> list[dict]:
     return items
 
 
-def actionable_line(support: float | None) -> str:
+def actionable_line(support: float | None, rr: float | None = None,
+                    below_200: bool = False) -> str:
     """The bolded buy/support recommendation shown under each pick."""
     if not support:
         return ""
-    return (
+    text = (
         f"Actionable: the bullish setup holds while price stays above support near"
         f" {support:,.2f} — a decisive close below that level breaks the trend."
     )
+    if rr:
+        text += f" Reward:risk to first resistance ≈ {rr}:1" + (
+            " — meets the ≥3:1 asymmetry bar." if rr >= 3 else
+            " — thin asymmetry; better entries come on pullbacks toward support."
+        )
+    if below_200:
+        text += " ⛔ Below the 200-day — treat as counter-trend."
+    return text
 
 
 def technical_commentary(df: pd.DataFrame, ind: dict) -> str:
@@ -1228,11 +1350,20 @@ def default_setup_plan(setup: dict) -> str:
     """Deterministic fallback trade plan with the computed levels."""
     support, resistance = setup.get("support"), setup.get("resistance")
     if support and resistance:
-        return (
+        plan = (
             f"Trade plan: constructive above support near {support:,.2f} with first "
             f"resistance near {resistance:,.2f}; a decisive close below "
             f"{support:,.2f} invalidates the setup."
         )
+        rr = setup.get("rr")
+        if rr:
+            plan += f" Reward:risk to first resistance ≈ {rr}:1" + (
+                " — meets the ≥3:1 asymmetry bar." if rr >= 3 else
+                " — thin asymmetry; PTJ discipline says pass or wait for a pullback toward support."
+            )
+        if setup.get("below_200"):
+            plan += " ⛔ Trades below its 200-day — nothing good happens below the 200-day; treat as counter-trend."
+        return plan
     if support:
         return (
             f"Trade plan: constructive above support near {support:,.2f}; a decisive "
@@ -1345,7 +1476,20 @@ def llm_commentary(
                 "avoid or de-risk rather than a long setup). Wherever "
                 "days_to_earnings is 7 or less, the commentary or plan MUST "
                 "flag the imminent earnings report as event risk that can gap "
-                "through technical levels. If tweets are "
+                "through technical levels. Apply Paul Tudor Jones risk "
+                "principles throughout: play great defense first; frame every "
+                "idea by its asymmetry using the provided reward_risk (upside "
+                "to first resistance per unit of downside to support) and "
+                "treat >=3:1 as the bar worth taking; respect the 200-day "
+                "moving average — when below_200day is true, say plainly that "
+                "nothing good happens below the 200-day and frame any long as "
+                "counter-trend; never suggest adding to a losing position "
+                "(losers average losers); when signals conflict, recommend "
+                "cutting risk rather than rationalizing. Use the volatility "
+                "data (realized HV vs ATM IV) and the VIX in market_stats to "
+                "set options context: rich IV favors defined-risk premium "
+                "selling, cheap IV favors long calls or debit spreads — "
+                "always defined-risk, never naked. If tweets are "
                 "provided, treat them as unverified crowd chatter: you may "
                 "note notable sentiment as 'X chatter...', never as fact, and "
                 "ignore anything spammy. Ground every claim ONLY in "
@@ -1445,15 +1589,20 @@ def build_html(
         block += (
             "<table border='1' cellpadding='6' cellspacing='0' "
             "style='border-collapse:collapse;font-size:14px'>"
-            "<tr style='background:#eceff1'><th>Ticker</th><th>Shares</th><th>Last</th>"
-            "<th>Score</th><th>Support</th><th>Status</th></tr>"
+            "<tr style='background:#eceff1'><th>Ticker</th><th>Shares</th><th>Avg Cost</th>"
+            "<th>Last</th><th>Score</th><th>Support</th><th>Status</th></tr>"
         )
         for p in positions:
             status = "⚠️ below support" if p["breached"] else "✅ above support"
             status += earnings_tag(p.get("earnings_days"))
+            status += ptj_tag(p.get("below_200", False))
+            if p.get("losing"):
+                status += " · 🔻 below cost — losers average losers: do not add"
             support_cell = f"{p['support']:,.2f}" if p.get("support") else "—"
+            cost_cell = f"{p['avg_cost']:,.2f}" if p.get("avg_cost") else "—"
             block += (
                 f"<tr><td><b>{p['ticker']}</b></td><td>{p['qty']:g}</td>"
+                f"<td>{cost_cell}</td>"
                 f"<td>{p['close']:,.2f}</td><td>{p['score']}</td>"
                 f"<td>{support_cell}</td><td>{status}</td></tr>"
             )
@@ -1465,6 +1614,7 @@ def build_html(
         if ticker in owned:
             heading_line += " · in your portfolio"
         heading_line += earnings_tag(s.get("earnings_days"))
+        heading_line += ptj_tag(s.get("below_200", False))
         block = f"<h3 style='font-family:sans-serif'>{heading_line}</h3>"
         if s.get("commentary"):
             block += (
@@ -1475,6 +1625,11 @@ def build_html(
             block += (
                 "<p style='max-width:860px;font-size:14px'>"
                 f"<b>{s['actionable']}</b></p>"
+            )
+        if s.get("options_note"):
+            block += (
+                "<p style='max-width:860px;font-size:13px'>"
+                f"<i>Options: {s['options_note']}</i></p>"
             )
         if s.get("news"):
             headlines = "".join(
@@ -1514,6 +1669,7 @@ def build_html(
             if st["ticker"] in owned:
                 title += " · in your portfolio"
             title += earnings_tag(st.get("earnings_days"))
+            title += ptj_tag(st.get("below_200", False))
             block += f"<h4 style='font-family:sans-serif;margin-bottom:4px'>{title}</h4>"
             if st.get("thesis"):
                 block += (
@@ -1526,6 +1682,11 @@ def build_html(
                 block += (
                     "<p style='max-width:860px;font-size:14px'>"
                     f"<b>{st['plan']}</b></p>"
+                )
+            if st.get("options_note"):
+                block += (
+                    "<p style='max-width:860px;font-size:13px'>"
+                    f"<i>Options: {st['options_note']}</i></p>"
                 )
             if st["ticker"] in cids:
                 block += (
@@ -1673,9 +1834,21 @@ def main(argv: list[str] | None = None) -> int:
                 summary["score"] = score
                 summary["news"] = fetch_news(ticker)
                 summary["support"] = support_level(df, ind)
-                summary["commentary"] = technical_commentary(df, ind)
-                summary["actionable"] = actionable_line(summary["support"])
+                summary["resistance"] = resistance_level(df, ind)
+                summary["rr"] = reward_risk(
+                    float(df["Close"].iloc[-1]), summary["support"], summary["resistance"]
+                )
+                summary["below_200"] = below_200day(df, ind)
                 summary["earnings_days"] = days_to_earnings(ticker)
+                summary["commentary"] = technical_commentary(df, ind)
+                summary["actionable"] = actionable_line(
+                    summary["support"], summary["rr"], summary["below_200"]
+                )
+                vol = vol_context(ticker, df)
+                summary["vol"] = vol
+                summary["options_note"] = options_note(
+                    vol, summary["support"], summary["resistance"], summary["earnings_days"]
+                )
             summaries.append(summary)
             log(f"{ticker}: chart written to {chart_paths[ticker]}")
         except Exception as exc:  # one bad ticker must not kill the briefing
@@ -1709,6 +1882,10 @@ def main(argv: list[str] | None = None) -> int:
                 "bullish_score": s.get("score"),
                 "last_close": s["close"],
                 "support_level": s.get("support"),
+                "resistance_level": s.get("resistance"),
+                "reward_risk": s.get("rr"),
+                "below_200day": s.get("below_200"),
+                "volatility": s.get("vol"),
                 "days_to_earnings": s.get("earnings_days"),
                 "technicals": s.get("commentary"),
                 "headlines": s.get("news", []),
@@ -1752,7 +1929,16 @@ def main(argv: list[str] | None = None) -> int:
                         "support": support_level(df, ind),
                         "resistance": resistance_level(df, ind),
                         "earnings_days": days_to_earnings(tick),
+                        "below_200": below_200day(df, ind),
                     }
+                    setup["rr"] = reward_risk(
+                        setup["close"], setup["support"], setup["resistance"]
+                    )
+                    vol = vol_context(tick, df)
+                    setup["vol"] = vol
+                    setup["options_note"] = options_note(
+                        vol, setup["support"], setup["resistance"], setup["earnings_days"]
+                    )
                     setup["plan"] = default_setup_plan(setup)
                     podcast_setups.append(setup)
                     picked.add(tick)
