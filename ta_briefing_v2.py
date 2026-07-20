@@ -928,81 +928,117 @@ def append_picks_ledger(summaries: list[dict], setups: list[dict]) -> None:
     log(f"ledger: recorded {added} new entrie(s)")
 
 
-def build_scorecard(cfg: dict) -> str | None:
-    """HTML for the Weekly Scorecard: how past picks actually performed.
+SCORECARD_HORIZONS = (("1-Week", 5), ("1-Month", 21), ("1-Year", 252))
 
-    Grades ledger entries at least 7 days old: 1-week forward return,
-    return to date, and whether the recorded support broke after entry.
-    Returns None when there is nothing gradeable yet.
+
+def build_scorecard(cfg: dict) -> str | None:
+    """HTML for the Performance Scorecard across 1-week/1-month/1-year.
+
+    Grades every ledger entry with at least a week of history: forward
+    return at each horizon that has elapsed, the same-window SPY return
+    (alpha), and whether the recorded support broke after entry. Returns
+    None when there is nothing gradeable yet.
     """
     import csv
 
     if not LEDGER_PATH.exists():
         return None
     with LEDGER_PATH.open() as fh:
-        rows = list(csv.DictReader(fh))
+        rows = list(csv.DictReader(fh))[-5000:]
     today = datetime.now(EASTERN).date()
+    try:
+        spy = fetch_history("SPY", 560)
+    except Exception:
+        spy = None
     graded, cache = [], {}
-    for r in rows[-400:]:
+    for r in rows:
         try:
             entry_date = datetime.strptime(r["date"], "%Y-%m-%d").date()
             age = (today - entry_date).days
-            if age < 7 or age > 90:
+            if age < 7:
                 continue
             ticker = r["ticker"]
             if ticker not in cache:
-                cache[ticker] = fetch_history(ticker, 130)
+                cache[ticker] = fetch_history(ticker, min(550, age + 80))
             df = cache[ticker]
             entry = float(r["close"])
             support = float(r["support"]) if r["support"] else None
-            after = df[df.index > pd.Timestamp(entry_date)]
+            stamp = pd.Timestamp(entry_date)
+            after = df[df.index > stamp]
             if len(after) < 5:
                 continue
-            graded.append({
+            rec = {
                 "score": float(r["score"]),
-                "week": float(after["Close"].iloc[4]) / entry - 1,
-                "to_date": float(df["Close"].iloc[-1]) / entry - 1,
+                "rets": {},
+                "alphas": {},
                 "broke": bool(support) and bool((after["Close"] < support).any()),
-            })
+            }
+            spy_after, spy_entry = None, None
+            if spy is not None and (spy.index <= stamp).any():
+                spy_entry = float(spy[spy.index <= stamp]["Close"].iloc[-1])
+                spy_after = spy[spy.index > stamp]
+            for name, bars in SCORECARD_HORIZONS:
+                if len(after) >= bars:
+                    ret = float(after["Close"].iloc[bars - 1]) / entry - 1
+                    rec["rets"][name] = ret
+                    if spy_after is not None and len(spy_after) >= bars and spy_entry:
+                        rec["alphas"][name] = ret - (
+                            float(spy_after["Close"].iloc[bars - 1]) / spy_entry - 1
+                        )
+            if rec["rets"]:
+                graded.append(rec)
         except Exception:
             continue
     if not graded:
         return None
 
-    def agg(items):
-        n = len(items)
-        return {
-            "n": n,
-            "hit": sum(1 for g in items if g["week"] > 0) / n * 100,
-            "week": sum(g["week"] for g in items) / n * 100,
-            "to_date": sum(g["to_date"] for g in items) / n * 100,
-            "broke": sum(1 for g in items if g["broke"]) / n * 100,
-        }
+    def horizon_row(label, items, horizon):
+        sample = [g for g in items if horizon in g["rets"]]
+        if not sample:
+            return ""
+        n = len(sample)
+        rets = [g["rets"][horizon] for g in sample]
+        alphas = [g["alphas"][horizon] for g in sample if horizon in g["alphas"]]
+        hit = sum(1 for x in rets if x > 0) / n * 100
+        avg = sum(rets) / n * 100
+        alpha = f"{sum(alphas) / len(alphas) * 100:+.1f}%" if alphas else "—"
+        broke = sum(1 for g in sample if g["broke"]) / n * 100
+        return (
+            f"<tr><td>{label}</td><td>{n}</td><td>{hit:.0f}%</td>"
+            f"<td>{avg:+.1f}%</td><td>{alpha}</td><td>{broke:.0f}%</td></tr>"
+        )
 
-    buckets = [("All picks", graded)]
+    header = (
+        "<table border='1' cellpadding='6' cellspacing='0' "
+        "style='border-collapse:collapse;font-size:14px'>"
+        "<tr style='background:#eceff1'><th>{first}</th><th>N</th>"
+        "<th>Hit rate</th><th>Avg return</th><th>Avg vs SPY</th>"
+        "<th>Support broke</th></tr>"
+    )
+    block = (
+        "<h3 style='font-family:sans-serif'>Performance Scorecard</h3>"
+        "<p style='max-width:860px;font-size:14px'>How the ledger's signals "
+        "performed at each horizon (graded on the close at signal time; "
+        "'vs SPY' is the average excess return over SPY across the same "
+        "windows):</p>"
+    )
+    block += header.format(first="Horizon")
+    for name, _ in SCORECARD_HORIZONS:
+        block += horizon_row(name, graded, name)
+    block += "</table>"
+
     high = [g for g in graded if g["score"] >= 4.0]
     low = [g for g in graded if g["score"] < 4.0]
     if high and low:
-        buckets += [("Score ≥ 4.0", high), ("Score < 4.0", low)]
-    block = (
-        "<h3 style='font-family:sans-serif'>Weekly Scorecard</h3>"
-        "<p style='max-width:860px;font-size:14px'>How signals from the "
-        "ledger performed (entries at least a week old, graded on the close "
-        "at signal time):</p>"
-        "<table border='1' cellpadding='6' cellspacing='0' "
-        "style='border-collapse:collapse;font-size:14px'>"
-        "<tr style='background:#eceff1'><th>Bucket</th><th>N</th>"
-        "<th>1-week hit rate</th><th>Avg 1-week</th><th>Avg to date</th>"
-        "<th>Support broke</th></tr>"
-    )
-    for name, items in buckets:
-        a = agg(items)
+        bucket_h = "1-Month" if any("1-Month" in g["rets"] for g in graded) else "1-Week"
         block += (
-            f"<tr><td>{name}</td><td>{a['n']}</td><td>{a['hit']:.0f}%</td>"
-            f"<td>{a['week']:+.1f}%</td><td>{a['to_date']:+.1f}%</td>"
-            f"<td>{a['broke']:.0f}%</td></tr>"
+            f"<p style='max-width:860px;font-size:14px;margin-top:10px'>"
+            f"By score bucket ({bucket_h}):</p>"
         )
-    block += "</table>"
+        block += header.format(first="Bucket")
+        block += horizon_row("Score ≥ 4.0", high, bucket_h)
+        block += horizon_row("Score &lt; 4.0", low, bucket_h)
+        block += "</table>"
     return block
 
 
