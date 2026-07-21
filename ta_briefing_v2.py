@@ -525,16 +525,30 @@ def _gmail_notes(cfg: dict, query: str, max_items: int, max_chars: int) -> list[
 
 
 def fetch_research_notes(cfg: dict) -> list[dict]:
-    """Recent research newsletters (e.g. TMT Breakout) for analysis context."""
+    """Recent research newsletters for analysis context.
+
+    Sources are configured under research.sources, each with its own Gmail
+    query (e.g. TMT Breakout, Citrini Research); a legacy single
+    research.gmail_search is still honored when no source list exists.
+    """
     research = cfg.get("research") or {}
     if not research.get("enabled"):
         return []
-    return _gmail_notes(
-        cfg,
-        research.get("gmail_search", "TMT Breakout newer_than:10d"),
-        research.get("max_items", 3),
-        research.get("max_chars", 4000),
-    )
+    sources = research.get("sources") or [{
+        "gmail_search": research.get("gmail_search", "TMT Breakout newer_than:10d"),
+        "max_items": research.get("max_items", 3),
+    }]
+    notes = []
+    for src in sources:
+        query = src.get("gmail_search")
+        if not query:
+            continue
+        notes += _gmail_notes(
+            cfg, query,
+            src.get("max_items", 3),
+            research.get("max_chars", 4000),
+        )
+    return notes
 
 
 def fetch_podcast_notes(cfg: dict) -> list[dict]:
@@ -1531,7 +1545,9 @@ def llm_commentary(
                 "the show/episode; prefer concrete investment views over "
                 "episode descriptions; if podcast_notes is empty, "
                 "return an empty array. For each entry in "
-                "podcast_trade_candidates, add a 'setups' item: 'analysis' is "
+                "podcast_trade_candidates (research_notes may span multiple "
+                "letters — e.g. TMT Breakout, Citrini Research — attribute "
+                "each view to its letter by name), add a 'setups' item: 'analysis' is "
                 "1-2 sentences connecting the podcast thesis to the current "
                 "technical posture (score, trend, levels); 'plan' is ONE "
                 "sentence with the exact numbers provided — the constructive "

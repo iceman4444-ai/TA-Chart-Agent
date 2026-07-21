@@ -40,8 +40,15 @@ output_dir: output
 research:
   enabled: true
   imap_host: imap.gmail.com
-  gmail_search: "TMT Breakout newer_than:10d"
-  max_items: 3     # newest matching messages to include
+  # Research newsletters pulled from the inbox; each source has its own
+  # Gmail query and cap. Add a new letter by adding a row here.
+  sources:
+    - name: TMT Breakout
+      gmail_search: "TMT Breakout newer_than:10d"
+      max_items: 3
+    - name: Citrini Research
+      gmail_search: "citrini newer_than:14d"
+      max_items: 3
   max_chars: 4000  # excerpt length per message
   # Investment podcast highlights: the user's podcast-summarizing Claude
   # project emails its output to this inbox; the newest matching message is

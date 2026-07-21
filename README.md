@@ -101,8 +101,8 @@ mode `watchlist`, using the `tickers` list.)
   clearly-labeled crowd sentiment; without the token it is skipped.
 
   When `research.enabled` is on, the scan also pulls the newest messages
-  matching `research.gmail_search` (default: TMT Breakout issues from the
-  last 10 days) from the Gmail inbox via IMAP — same app password as
+  matching each `research.sources` query (TMT Breakout and Citrini
+  Research by default) from the Gmail inbox via IMAP — same app password as
   sending — and hands the excerpts to Claude as analyst context. Notes that
   mention a pick or a relevant theme are woven into the commentary with
   attribution; irrelevant notes are ignored.
