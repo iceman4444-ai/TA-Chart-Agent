@@ -31,3 +31,5 @@ date,kind,ticker,score,close,support
 2026-07-22,setup,GLD,3.5,381.33,372.64
 2026-07-22,setup,SLV,3.2,54.54,53.05
 2026-07-22,setup,CPER,3.9,39.38,38.53
+2026-07-22,setup,GOOGL,2.2,342.09,339.27
+2026-07-22,setup,TSLA,2.0,374.01,368.60
