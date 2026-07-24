@@ -52,3 +52,4 @@ date,kind,ticker,score,close,support
 2026-07-24,setup,GLD,3.0,373.00,372.98
 2026-07-24,setup,TLT,1.9,83.40,82.14
 2026-07-24,setup,GDX,3.2,75.42,74.90
+2026-07-24,pick,CTVA,4.5,89.25,85.88
