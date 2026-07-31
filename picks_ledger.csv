@@ -98,3 +98,4 @@ date,kind,ticker,score,close,support
 2026-07-31,setup,MSFT,3.9,458.53,448.74
 2026-07-31,setup,META,2.3,543.00,519.78
 2026-07-31,setup,NFLX,2.3,71.76,65.08
+2026-07-31,pick,PSX,4.5,211.68,200.76
