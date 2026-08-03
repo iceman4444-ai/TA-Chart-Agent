@@ -569,6 +569,38 @@ def fetch_podcast_notes(cfg: dict) -> list[dict]:
     )
 
 
+def _episode_links(entry, feed) -> tuple[str | None, str | None]:
+    """(episode page or show page, transcript URL) for a feed entry.
+
+    Transcripts come from the Podcasting 2.0 <podcast:transcript> tag, which
+    only some shows publish; HTML/text transcripts are preferred over VTT.
+    """
+    url = entry.get("link")
+    if not url:
+        for link in entry.get("links", []) or []:
+            if link.get("rel") == "alternate" and link.get("href"):
+                url = link["href"]
+                break
+    if not url:
+        url = (feed.feed or {}).get("link")  # fall back to the show page
+
+    transcript = None
+    raw = entry.get("podcast_transcript")
+    candidates = raw if isinstance(raw, list) else ([raw] if raw else [])
+    for cand in candidates:
+        if not isinstance(cand, dict):
+            continue
+        href = cand.get("url") or cand.get("href")
+        if not href:
+            continue
+        ctype = (cand.get("type") or "").lower()
+        if "html" in ctype or "plain" in ctype or "text" in ctype:
+            transcript = href
+            break
+        transcript = transcript or href
+    return url, transcript
+
+
 def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
     """Recent episodes from the configured podcast RSS network.
 
@@ -601,10 +633,16 @@ def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
                 text = entry.get("summary") or entry.get("description") or ""
                 text = html_lib.unescape(re.sub(r"<[^>]+>", " ", text))
                 text = re.sub(r"\s+", " ", text).strip()
+                episode_url, transcript_url = _episode_links(entry, parsed)
+                title = entry.get("title", "episode")
                 notes.append({
-                    "subject": f"{show}: {entry.get('title', 'episode')}",
+                    "subject": f"{show}: {title}",
+                    "show": show,
+                    "title": title,
                     "date": (entry.get("published") or "")[:16],
                     "excerpt": text[:max_chars],
+                    "url": episode_url,
+                    "transcript": transcript_url,
                     "_ts": time.mktime(stamp),
                 })
         except Exception as exc:
@@ -855,8 +893,13 @@ def fetch_guest_crossovers(cfg: dict, podcast_notes: list[dict]) -> list[dict]:
                 ).strip()
                 notes.append({
                     "subject": f"[guest crossover: {guest}] {show}: {title}",
+                    "show": show,
+                    "title": title,
+                    "guest": guest,
                     "date": (ep.get("releaseDate") or "")[:10],
                     "excerpt": desc[: research.get("podcast_feed_chars", 2000)],
+                    "url": ep.get("trackViewUrl") or ep.get("collectionViewUrl"),
+                    "transcript": None,
                     "_ts": when.timestamp(),
                 })
         except Exception as exc:
@@ -1458,12 +1501,13 @@ def llm_commentary(
     podcast_notes: list[dict] | None = None,
     podcast_setups: list[dict] | None = None,
     tweets: dict[str, list[dict]] | None = None,
-) -> tuple[dict[str, dict], str, list[str], dict[str, dict]] | None:
+) -> tuple[dict[str, dict], str, list[str], dict[str, dict], dict[str, dict]] | None:
     """Claude-written commentary, when ANTHROPIC_API_KEY is configured.
 
     Returns ({ticker: {commentary, actionable}}, market_summary,
-    podcast_highlights, {ticker: {analysis, plan}}) or None, in which case
-    the caller keeps the deterministic versions.
+    podcast_highlights, {ticker: {analysis, plan}},
+    {note_id: {commentary, tickers}}) or None, in which case the caller
+    keeps the deterministic versions.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return None
@@ -1490,6 +1534,19 @@ def llm_commentary(
             },
             "market_summary": {"type": "string"},
             "podcast_highlights": {"type": "array", "items": {"type": "string"}},
+            "podcast_episodes": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "commentary": {"type": "string"},
+                        "tickers": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["id", "commentary", "tickers"],
+                    "additionalProperties": False,
+                },
+            },
             "setups": {
                 "type": "array",
                 "items": {
@@ -1504,7 +1561,9 @@ def llm_commentary(
                 },
             },
         },
-        "required": ["items", "market_summary", "podcast_highlights", "setups"],
+        "required": [
+            "items", "market_summary", "podcast_highlights", "podcast_episodes", "setups",
+        ],
         "additionalProperties": False,
     }
     try:
@@ -1544,7 +1603,15 @@ def llm_commentary(
                 "the key theses, tickers, and calls made, each attributed to "
                 "the show/episode; prefer concrete investment views over "
                 "episode descriptions; if podcast_notes is empty, "
-                "return an empty array. For each entry in "
+                "return an empty array. Also fill 'podcast_episodes': one "
+                "entry per podcast note that carries investment substance, "
+                "using that note's exact 'id' — 'commentary' is 2-3 sentences "
+                "on what an investor should take from that specific episode "
+                "(the guest's thesis, the mechanism, the risk, and how it "
+                "connects to current market conditions or the picks above), "
+                "and 'tickers' lists any US-listed symbols discussed in it "
+                "(empty when none). Skip notes that are purely promotional "
+                "or have no investment content. For each entry in "
                 "podcast_trade_candidates (research_notes may span multiple "
                 "letters — e.g. TMT Breakout, Citrini Research — attribute "
                 "each view to its letter by name), add a 'setups' item: 'analysis' is "
@@ -1608,11 +1675,19 @@ def llm_commentary(
             item["ticker"]: {"analysis": item["analysis"], "plan": item["plan"]}
             for item in data.get("setups", [])
         }
+        episodes_map = {
+            item["id"]: {
+                "commentary": item["commentary"],
+                "tickers": item.get("tickers", []),
+            }
+            for item in data.get("podcast_episodes", [])
+        }
         return (
             per_ticker,
             data.get("market_summary", ""),
             data.get("podcast_highlights", []),
             setups_map,
+            episodes_map,
         )
     except Exception as exc:
         log(f"Claude commentary unavailable, using technical commentary — {exc}")
@@ -1739,17 +1814,59 @@ def build_html(
         if market.get("cid"):
             block += f"<img src='cid:{market['cid']}' width='860' style='max-width:100%'/>"
         sections.append(block)
-    if podcast and (podcast.get("highlights") or podcast.get("text")):
+    if podcast and (
+        podcast.get("highlights") or podcast.get("episodes") or podcast.get("text")
+    ):
         block = "<h3 style='font-family:sans-serif'>Investment Podcast Highlights</h3>"
         if podcast.get("highlights"):
             block += (
-                "<ul style='max-width:860px;font-size:14px'>"
+                "<p style='max-width:860px;font-size:14px'><b>Across this week's "
+                "shows:</b></p><ul style='max-width:860px;font-size:14px'>"
                 + "".join(f"<li>{h}</li>" for h in podcast["highlights"])
                 + "</ul>"
             )
-        else:
+        elif podcast.get("text"):
             block += f"<p style='max-width:860px;font-size:14px'>{podcast['text']}</p>"
-        if podcast.get("source"):
+
+        for ep in podcast.get("episodes") or []:
+            title = ep.get("title") or ep.get("subject", "Episode")
+            show = ep.get("show")
+            label = f"{show} — {title}" if show else title
+            if ep.get("guest"):
+                label = f"🔁 {label}"
+            block += (
+                "<p style='max-width:860px;font-size:14px;margin-bottom:2px'>"
+                f"<b>{label}</b>"
+            )
+            if ep.get("date"):
+                block += f" <span style='color:#777'>({ep['date']})</span>"
+            links = []
+            if ep.get("url"):
+                links.append(f"<a href='{ep['url']}'>Episode ↗</a>")
+            if ep.get("transcript"):
+                links.append(f"<a href='{ep['transcript']}'>Transcript ↗</a>")
+            if links:
+                block += " · " + " · ".join(links)
+            block += "</p>"
+            if ep.get("commentary"):
+                block += (
+                    "<p style='max-width:860px;font-size:14px;margin-top:2px'>"
+                    f"{ep['commentary']}</p>"
+                )
+            if ep.get("tickers"):
+                block += (
+                    "<p style='max-width:860px;font-size:13px;color:#555;"
+                    "margin-top:2px'><i>Discussed: "
+                    + ", ".join(ep["tickers"])
+                    + "</i></p>"
+                )
+        if podcast.get("episodes"):
+            block += (
+                "<p style='color:#777;font-size:12px'>🔁 marks an episode found "
+                "by following a guest to a show outside the regular network. "
+                "Transcript links appear when the show publishes one.</p>"
+            )
+        elif podcast.get("source"):
             block += f"<p style='color:#777;font-size:12px'>Source: {podcast['source']}</p>"
         sections.append(block)
     if setups:
@@ -1993,6 +2110,8 @@ def main(argv: list[str] | None = None) -> int:
         research_notes = fetch_research_notes(cfg)
         podcast_notes = fetch_podcast_notes(cfg) + fetch_podcast_feed_notes(cfg)
         podcast_notes += fetch_guest_crossovers(cfg, podcast_notes)
+        for idx, note in enumerate(podcast_notes, 1):
+            note["id"] = f"ep{idx}"
         if podcast_notes:
             sources = "; ".join(n["subject"] for n in podcast_notes[:3])
             if len(podcast_notes) > 3:
@@ -2001,6 +2120,7 @@ def main(argv: list[str] | None = None) -> int:
                 "source": sources,
                 "text": podcast_notes[0]["excerpt"][:1500],
                 "highlights": None,
+                "episodes": [],
             }
 
         # Turn podcast-mentioned tickers into full trade setups: extract the
@@ -2057,7 +2177,7 @@ def main(argv: list[str] | None = None) -> int:
             tweets,
         )
         if llm_result:
-            per_ticker, llm_market, llm_podcast, llm_setups = llm_result
+            per_ticker, llm_market, llm_podcast, llm_setups, llm_episodes = llm_result
             for s in summaries:
                 item = per_ticker.get(s["ticker"])
                 if item:
@@ -2067,6 +2187,16 @@ def main(argv: list[str] | None = None) -> int:
                 market_text = llm_market
             if llm_podcast and podcast:
                 podcast["highlights"] = llm_podcast
+            if podcast and llm_episodes:
+                # keep episodes Claude found substantive, in feed order
+                episodes = []
+                for note in podcast_notes:
+                    item = llm_episodes.get(note.get("id"))
+                    if not item:
+                        continue
+                    episodes.append({**note, **item})
+                podcast["episodes"] = episodes
+                log(f"podcast section: {len(episodes)} episode write-up(s)")
             for st in podcast_setups:
                 item = llm_setups.get(st["ticker"])
                 if item:
