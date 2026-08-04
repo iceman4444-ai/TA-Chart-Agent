@@ -2146,6 +2146,8 @@ def main(argv: list[str] | None = None) -> int:
     ind = cfg["indicators"]
     out_dir = Path(cfg["output_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
+    # prior picks, used to tell a fresh signal from a recurring one
+    ledger_rows = load_ledger_rows() if args.scan else []
 
     if args.scan:
         heading = args.heading or "Claude TA Afternoon Recap"
@@ -2217,7 +2219,6 @@ def main(argv: list[str] | None = None) -> int:
     podcast_setups = []
     positions = []
     scorecard = None
-    ledger_rows = load_ledger_rows() if args.scan else []
     if args.scan:
         positions = analyze_positions(cfg, ind)
         overview = market_overview()
