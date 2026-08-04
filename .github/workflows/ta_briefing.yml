@@ -99,6 +99,8 @@ jobs:
           SECRET_B: ${{ secrets.TARECAP2 }}
           # Optional: X/Twitter chatter for picks and podcast setups
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          # Optional: turns % -of-account sizing into share counts and dollars
+          TA_ACCOUNT_SIZE: ${{ secrets.TA_ACCOUNT_SIZE }}
         run: |
           if [[ "$SECRET_A" == sk-ant-* ]]; then
             export ANTHROPIC_API_KEY="$SECRET_A" TA_SMTP_PASSWORD="$SECRET_B"

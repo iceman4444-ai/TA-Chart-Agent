@@ -1124,6 +1124,105 @@ def earnings_tag(days: int | None, threshold: int = 10) -> str:
 LEDGER_PATH = Path("picks_ledger.csv")
 
 
+def position_plan(close: float, support: float | None, cfg: dict) -> str:
+    """Risk-based position sizing from the distance to the stop.
+
+    Sizing is expressed as a share of the account (risk% ÷ stop distance) so
+    nothing personal is stored in this repo; when TA_ACCOUNT_SIZE is set as a
+    secret, share count and dollar risk are added.
+    """
+    if not support or close <= support:
+        return ""
+    risk_cfg = cfg.get("risk") or {}
+    risk_pct = float(risk_cfg.get("risk_pct", 1.0))
+    max_pos = float(risk_cfg.get("max_position_pct", 25))
+    stop_pct = (close - support) / close * 100
+    pos_pct = risk_pct / stop_pct * 100
+    capped = pos_pct > max_pos
+    if capped:
+        pos_pct = max_pos
+
+    text = (
+        f"Sizing: stop {stop_pct:.1f}% below entry, so risking {risk_pct:g}% of the "
+        f"account means a position of ~{pos_pct:.0f}% of it"
+    )
+    account = os.environ.get("TA_ACCOUNT_SIZE")
+    if account:
+        try:
+            acct = float(str(account).replace(",", "").replace("$", ""))
+            shares = int(acct * pos_pct / 100 / close)
+            if shares > 0:
+                dollars = shares * (close - support)
+                text += (
+                    f" — about {shares:,} shares (${shares * close:,.0f}), "
+                    f"risking ${dollars:,.0f} to the stop"
+                )
+        except ValueError:
+            pass
+    if capped:
+        text += (
+            f"; the stop is tight enough that full risk sizing would exceed the "
+            f"{max_pos:g}% single-position cap, so size is capped there"
+        )
+    return text + "."
+
+
+def load_ledger_rows() -> list[dict]:
+    """Prior ledger entries, oldest first (empty when the ledger is new)."""
+    import csv
+
+    if not LEDGER_PATH.exists():
+        return []
+    try:
+        with LEDGER_PATH.open() as fh:
+            return sorted(csv.DictReader(fh), key=lambda r: r["date"])
+    except Exception:
+        return []
+
+
+def signal_history(rows: list[dict], ticker: str, window: int = 30) -> dict | None:
+    """How long this name has been recurring: prior appearances in `window` days.
+
+    Returns None for a name that has not been flagged recently (i.e. new).
+    """
+    today = datetime.now(EASTERN).date()
+    prior = []
+    for r in rows:
+        if r["ticker"] != ticker:
+            continue
+        try:
+            d = datetime.strptime(r["date"], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if d == today or (today - d).days > window:
+            continue
+        prior.append((d, r))
+    if not prior:
+        return None
+    prior.sort()
+    first_date, first_row = prior[0]
+    try:
+        first_close = float(first_row["close"])
+    except (ValueError, KeyError):
+        first_close = None
+    return {
+        "days": len({d for d, _ in prior}),
+        "first_date": first_date.strftime("%b %-d"),
+        "first_close": first_close,
+    }
+
+
+def repeat_note(hist: dict | None, close: float) -> str:
+    """Badge text distinguishing a fresh signal from a recurring one."""
+    if not hist:
+        return "🆕 new today"
+    text = f"day {hist['days'] + 1} of this signal"
+    if hist.get("first_close"):
+        move = (close / hist["first_close"] - 1) * 100
+        text += f" — first flagged {hist['first_date']} at {hist['first_close']:,.2f} ({move:+.1f}% since)"
+    return text
+
+
 def append_picks_ledger(summaries: list[dict], setups: list[dict]) -> None:
     """Record today's picks and setups for the weekly scorecard.
 
@@ -1185,6 +1284,21 @@ def build_scorecard(cfg: dict) -> str | None:
         spy = fetch_history("SPY", 560)
     except Exception:
         spy = None
+    # Grade each *idea* once: a name re-flagged on consecutive days is the
+    # same signal, so only its first appearance in a 30-day window counts.
+    rows.sort(key=lambda r: r["date"])
+    deduped, last_seen = [], {}
+    for r in rows:
+        try:
+            d = datetime.strptime(r["date"], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        prev = last_seen.get(r["ticker"])
+        if prev is None or (d - prev).days > 30:
+            deduped.append(r)
+        last_seen[r["ticker"]] = d
+    rows = deduped
+
     graded, cache = [], {}
     for r in rows:
         try:
@@ -1253,9 +1367,9 @@ def build_scorecard(cfg: dict) -> str | None:
     block = (
         "<h3 style='font-family:sans-serif'>Performance Scorecard</h3>"
         "<p style='max-width:860px;font-size:14px'>How the ledger's signals "
-        "performed at each horizon (graded on the close at signal time; "
-        "'vs SPY' is the average excess return over SPY across the same "
-        "windows):</p>"
+        "performed at each horizon (each idea graded once, from the close on "
+        "the day it was first flagged; 'vs SPY' is the average excess return "
+        "over SPY across the same windows):</p>"
     )
     block += header.format(first="Horizon")
     for name, _ in SCORECARD_HORIZONS:
@@ -1643,7 +1757,12 @@ def llm_commentary(
                 "flow as corroborating evidence when it agrees with the "
                 "technical setup and note the divergence when it doesn't, but "
                 "never as proof — day-level volume cannot distinguish buyers "
-                "from sellers. If tweets are "
+                "from sellers. Each pick carries 'signal_age': when it reads "
+                "'new today' this is a fresh signal, and when it says day N "
+                "the name has been recurring — say so plainly and note "
+                "whether it has already run from the first flag (chasing "
+                "extended moves is how good setups become bad entries). "
+                "If tweets are "
                 "provided, treat them as unverified crowd chatter: you may "
                 "note notable sentiment as 'X chatter...', never as fact, and "
                 "ignore anything spammy. Ground every claim ONLY in "
@@ -1777,6 +1896,8 @@ def build_html(
             heading_line += " · in your portfolio"
         heading_line += earnings_tag(s.get("earnings_days"))
         heading_line += ptj_tag(s.get("below_200", False))
+        if s.get("repeat"):
+            heading_line += f" · {s['repeat']}"
         block = f"<h3 style='font-family:sans-serif'>{heading_line}</h3>"
         if s.get("commentary"):
             block += (
@@ -1787,6 +1908,11 @@ def build_html(
             block += (
                 "<p style='max-width:860px;font-size:14px'>"
                 f"<b>{s['actionable']}</b></p>"
+            )
+        if s.get("sizing"):
+            block += (
+                "<p style='max-width:860px;font-size:14px'>"
+                f"<b>{s['sizing']}</b></p>"
             )
         if s.get("options_note"):
             block += (
@@ -1879,6 +2005,8 @@ def build_html(
                 title += " · in your portfolio"
             title += earnings_tag(st.get("earnings_days"))
             title += ptj_tag(st.get("below_200", False))
+            if st.get("repeat"):
+                title += f" · {st['repeat']}"
             block += f"<h4 style='font-family:sans-serif;margin-bottom:4px'>{title}</h4>"
             if st.get("thesis"):
                 block += (
@@ -1891,6 +2019,11 @@ def build_html(
                 block += (
                     "<p style='max-width:860px;font-size:14px'>"
                     f"<b>{st['plan']}</b></p>"
+                )
+            if st.get("sizing"):
+                block += (
+                    "<p style='max-width:860px;font-size:14px'>"
+                    f"<b>{st['sizing']}</b></p>"
                 )
             if st.get("options_note"):
                 block += (
@@ -2058,6 +2191,11 @@ def main(argv: list[str] | None = None) -> int:
                 summary["actionable"] = actionable_line(
                     summary["support"], summary["rr"], summary["below_200"]
                 )
+                last_close = float(df["Close"].iloc[-1])
+                summary["sizing"] = position_plan(last_close, summary["support"], cfg)
+                summary["repeat"] = repeat_note(
+                    signal_history(ledger_rows, ticker), last_close
+                )
                 vol = vol_context(ticker, df)
                 summary["vol"] = vol
                 summary["options_note"] = options_note(
@@ -2079,6 +2217,7 @@ def main(argv: list[str] | None = None) -> int:
     podcast_setups = []
     positions = []
     scorecard = None
+    ledger_rows = load_ledger_rows() if args.scan else []
     if args.scan:
         positions = analyze_positions(cfg, ind)
         overview = market_overview()
@@ -2100,6 +2239,7 @@ def main(argv: list[str] | None = None) -> int:
                 "resistance_level": s.get("resistance"),
                 "reward_risk": s.get("rr"),
                 "below_200day": s.get("below_200"),
+                "signal_age": s.get("repeat"),
                 "volatility": s.get("vol"),
                 "days_to_earnings": s.get("earnings_days"),
                 "technicals": s.get("commentary"),
@@ -2151,6 +2291,12 @@ def main(argv: list[str] | None = None) -> int:
                     }
                     setup["rr"] = reward_risk(
                         setup["close"], setup["support"], setup["resistance"]
+                    )
+                    setup["sizing"] = position_plan(
+                        setup["close"], setup["support"], cfg
+                    )
+                    setup["repeat"] = repeat_note(
+                        signal_history(ledger_rows, tick), setup["close"]
                     )
                     vol = vol_context(tick, df)
                     setup["vol"] = vol

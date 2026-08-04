@@ -91,6 +91,13 @@ research:
   twitter_enabled: true
   twitter_max_tickers: 6
 
+# Risk sizing. Position size is derived from the distance to the stop, so it
+# is expressed as a share of the account and nothing personal lives here.
+# Set a TA_ACCOUNT_SIZE repo secret to also get share counts and dollar risk.
+risk:
+  risk_pct: 1.0          # percent of the account risked per trade
+  max_position_pct: 25   # cap on any single position, as a percent of account
+
 # Portfolio: open positions reconstructed from Fidelity trade-confirmation
 # emails (fetched via IMAP, parsed by Claude in-memory at run time; symbols
 # and quantities are never logged, stored, or committed).
