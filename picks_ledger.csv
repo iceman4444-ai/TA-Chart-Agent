@@ -141,3 +141,5 @@ date,kind,ticker,score,close,support
 2026-08-07,setup,GVAL,4.3,37.99,37.11
 2026-08-07,setup,CHTR,4.2,152.80,145.19
 2026-08-07,setup,MSFT,4.2,502.42,468.37
+2026-08-07,pick,APA,4.6,37.63,36.44
+2026-08-07,setup,META,2.5,592.10,572.38
