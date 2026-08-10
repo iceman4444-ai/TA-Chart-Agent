@@ -500,7 +500,11 @@ def _gmail_notes(cfg: dict, query: str, max_items: int, max_chars: int) -> list[
         imap = imaplib.IMAP4_SSL(host, 993)
         imap.login(cfg["email"]["username"], password)
         imap.select('"[Gmail]/All Mail"', readonly=True)
-        _, data = imap.search(None, "X-GM-RAW", f'"{query}"')
+        # IMAP quoted-strings need backslash escaping, otherwise a query
+        # containing its own quotes (e.g. a phrase search) is rejected with
+        # BAD "Could not parse command".
+        escaped = query.replace("\\", "\\\\").replace('"', '\\"')
+        _, data = imap.search(None, "X-GM-RAW", f'"{escaped}"')
         ids = (data[0] or b"").split()
         for mid in reversed(ids[-max_items:]):  # newest first
             _, msg_data = imap.fetch(mid, "(RFC822)")

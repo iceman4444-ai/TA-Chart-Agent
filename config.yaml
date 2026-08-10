@@ -103,7 +103,7 @@ risk:
 # and quantities are never logged, stored, or committed).
 portfolio:
   enabled: true
-  gmail_search: 'from:fidelity (confirmation OR executed OR "order has been filled") newer_than:90d'
+  gmail_search: "from:fidelity (confirmation OR executed OR filled) newer_than:90d"
   max_emails: 20
 
 # Bullish scan (--scan): score the universe and email the top_n most bullish
