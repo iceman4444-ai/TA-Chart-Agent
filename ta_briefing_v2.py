@@ -1124,6 +1124,117 @@ def earnings_tag(days: int | None, threshold: int = 10) -> str:
 LEDGER_PATH = Path("picks_ledger.csv")
 
 
+def market_regime(cfg: dict, ind: dict, breadth: dict | None = None) -> dict:
+    """Risk-on / mixed / risk-off read from index trend and market breadth.
+
+    Combines SPY and QQQ position versus their 50- and 200-day averages with
+    the share of the scanned universe holding above its own 50-day. Breakouts
+    fail far more often when the tape is below trend, so the email leads with
+    this rather than serving picks into a downtrend unremarked.
+    """
+    score, detail = 0, []
+    for sym in ("SPY", "QQQ"):
+        try:
+            df = add_indicators(fetch_history(sym, cfg["lookback_days"]), ind)
+            close = float(df["Close"].iloc[-1])
+            sma200 = df.get(f"SMA{ind.get('sma_long', 200)}")
+            sma50 = df.get(f"SMA{ind['sma_slow']}")
+            above200 = sma200 is not None and pd.notna(sma200.iloc[-1]) and close > sma200.iloc[-1]
+            above50 = sma50 is not None and pd.notna(sma50.iloc[-1]) and close > sma50.iloc[-1]
+            score += (1 if above200 else -1) + (0.5 if above50 else -0.5)
+            detail.append(
+                f"{sym} {'above' if above200 else 'below'} its 200-day and "
+                f"{'above' if above50 else 'below'} its 50-day"
+            )
+        except Exception as exc:
+            log(f"regime: {sym} check failed — {exc}")
+
+    pct = None
+    if breadth and breadth.get("total"):
+        pct = breadth["above_50"] / breadth["total"] * 100
+        score += 1 if pct >= 55 else (-1 if pct < 40 else 0)
+        detail.append(f"{pct:.0f}% of the scanned universe is above its 50-day")
+
+    if score >= 2:
+        label, stance = "Risk-on", (
+            "trend and breadth support breakout entries at normal size"
+        )
+    elif score <= -1:
+        label, stance = "Risk-off", (
+            "breakout failure risk is elevated — size down, demand better "
+            "asymmetry, or stand aside"
+        )
+    else:
+        label, stance = "Mixed", (
+            "the tape is indecisive — prefer the strongest setups and smaller size"
+        )
+    return {
+        "label": label,
+        "stance": stance,
+        "detail": "; ".join(detail) if detail else "",
+        "breadth_pct": round(pct) if pct is not None else None,
+        "score": score,
+    }
+
+
+def build_tldr(regime: dict | None, positions: list[dict] | None,
+               summaries: list[dict] | None, setups: list[dict] | None) -> str:
+    """Top-of-email digest: the few facts that should change behavior today."""
+    bullets = []
+    if regime:
+        bullets.append(
+            f"<b>{regime['label']} tape</b> — {regime['stance']}."
+            + (f" <span style='color:#555'>{regime['detail']}.</span>" if regime.get("detail") else "")
+        )
+
+    alerts = []
+    for p in positions or []:
+        if p.get("breached"):
+            alerts.append(f"<b>{p['ticker']}</b> closed below its support")
+        elif p.get("earnings_days") is not None and p["earnings_days"] <= 7:
+            alerts.append(f"<b>{p['ticker']}</b> reports in {p['earnings_days']}d")
+    if alerts:
+        bullets.append("Your positions need attention: " + "; ".join(alerts[:4]) + ".")
+
+    fresh = [
+        s for s in (summaries or [])
+        if s.get("repeat", "").startswith("🆕") and s.get("score") is not None
+    ]
+    if fresh:
+        best = max(fresh, key=lambda s: s["score"])
+        line = f"<b>New signal: {best['ticker']}</b> (score {best['score']})"
+        if best.get("support"):
+            line += f", support {best['support']:,.2f}"
+        if best.get("rr"):
+            line += f", {best['rr']}:1 to first resistance"
+        bullets.append(line + ".")
+    elif summaries:
+        bullets.append(
+            "No new names today — every pick below is a continuation of a "
+            "signal already flagged this month."
+        )
+
+    fresh_setups = [st for st in (setups or []) if st.get("repeat", "").startswith("🆕")]
+    if fresh_setups:
+        st = fresh_setups[0]
+        bullets.append(
+            f"From the podcasts: <b>{st['ticker']}</b> (score {st['score']}) — "
+            f"{st.get('sentiment', 'discussed')} view, now charted below."
+        )
+
+    if not bullets:
+        return ""
+    return (
+        "<div style='max-width:860px;border-left:4px solid #4aa8ff;"
+        "padding:8px 14px;margin-bottom:18px;background:#f6f9fc'>"
+        "<p style='font-family:sans-serif;font-size:15px;margin:4px 0'>"
+        "<b>Today's takeaways</b></p>"
+        "<ul style='font-size:14px;margin:6px 0'>"
+        + "".join(f"<li style='margin-bottom:4px'>{b}</li>" for b in bullets[:4])
+        + "</ul></div>"
+    )
+
+
 def position_plan(close: float, support: float | None, cfg: dict) -> str:
     """Risk-based position sizing from the distance to the stop.
 
@@ -1615,6 +1726,7 @@ def llm_commentary(
     podcast_notes: list[dict] | None = None,
     podcast_setups: list[dict] | None = None,
     tweets: dict[str, list[dict]] | None = None,
+    regime: dict | None = None,
 ) -> tuple[dict[str, dict], str, list[str], dict[str, dict], dict[str, dict]] | None:
     """Claude-written commentary, when ANTHROPIC_API_KEY is configured.
 
@@ -1747,7 +1859,12 @@ def llm_commentary(
                 "nothing good happens below the 200-day and frame any long as "
                 "counter-trend; never suggest adding to a losing position "
                 "(losers average losers); when signals conflict, recommend "
-                "cutting risk rather than rationalizing. Use the volatility "
+                "cutting risk rather than rationalizing. Respect "
+                "'market_regime': when it reads Risk-off or Mixed, say so in "
+                "the market summary and temper the individual plans "
+                "accordingly (smaller size, a higher asymmetry bar, or "
+                "standing aside) instead of writing every setup as if the "
+                "tape were supportive. Use the volatility "
                 "data (realized HV vs ATM IV) and the VIX in market_stats to "
                 "set options context: rich IV favors defined-risk premium "
                 "selling, cheap IV favors long calls or debit spreads — "
@@ -1777,6 +1894,7 @@ def llm_commentary(
                     "picks": picks,
                     "research_notes": research_notes or [],
                     "market_stats": market_stats or {},
+                    "market_regime": regime or {},
                     "podcast_notes": podcast_notes or [],
                     "podcast_trade_candidates": podcast_setups or [],
                     "tweets": tweets or {},
@@ -1840,6 +1958,7 @@ def build_html(
     setups: list[dict] | None = None,
     positions: list[dict] | None = None,
     scorecard: str | None = None,
+    regime: dict | None = None,
 ) -> str:
     owned = {p["ticker"] for p in positions} if positions else set()
     has_score = "score" in summaries[0]
@@ -2046,6 +2165,7 @@ def build_html(
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
 <h2>{heading} — {summaries[0]['date']}</h2>
+{build_tldr(regime, positions, summaries, setups)}
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px">
 <tr style="background:#eceff1"><th>Ticker</th>{score_head}<th>Close</th><th>1d %</th>
 <th>RSI(14)</th><th>MACD</th><th>Trend</th></tr>
@@ -2067,6 +2187,7 @@ def build_email(
     setups: list[dict] | None = None,
     positions: list[dict] | None = None,
     scorecard: str | None = None,
+    regime: dict | None = None,
 ) -> EmailMessage:
     email_cfg = cfg["email"]
     msg = EmailMessage()
@@ -2085,7 +2206,7 @@ def build_email(
     msg.add_alternative(
         build_html(
             summaries, cids, generated, heading, market_html, podcast, setups,
-            positions, scorecard,
+            positions, scorecard, regime,
         ),
         subtype="html",
     )
@@ -2155,11 +2276,21 @@ def main(argv: list[str] | None = None) -> int:
         universe = args.tickers or resolve_universe(scan_cfg)
         log(f"scanning {len(universe)} tickers for the {scan_cfg.get('top_n', 5)} most bullish...")
         scored = []
+        breadth = {"above_50": 0, "above_200": 0, "total": 0}
         for ticker in universe:
             try:
                 df = add_indicators(fetch_history(ticker, cfg["lookback_days"]), ind)
                 score = bullish_score(df, ind)
                 scored.append((score, ticker, df))
+                # breadth comes free from data already fetched for scoring
+                close_px = float(df["Close"].iloc[-1])
+                breadth["total"] += 1
+                for key, window in (
+                    ("above_50", ind["sma_slow"]), ("above_200", ind.get("sma_long")),
+                ):
+                    col = df.get(f"SMA{window}") if window else None
+                    if col is not None and pd.notna(col.iloc[-1]) and close_px > col.iloc[-1]:
+                        breadth[key] += 1
                 log(f"{ticker}: score {score}")
             except Exception as exc:
                 log(f"{ticker}: skipped — {exc}")
@@ -2219,7 +2350,14 @@ def main(argv: list[str] | None = None) -> int:
     podcast_setups = []
     positions = []
     scorecard = None
+    regime = None
     if args.scan:
+        regime = market_regime(cfg, ind, breadth)
+        log(
+            f"regime: {regime['label']} (score {regime['score']}"
+            + (f", breadth {regime['breadth_pct']}%" if regime["breadth_pct"] is not None else "")
+            + ")"
+        )
         positions = analyze_positions(cfg, ind)
         overview = market_overview()
         market_text = technical_market_summary(overview)
@@ -2322,6 +2460,7 @@ def main(argv: list[str] | None = None) -> int:
             podcast_notes,
             [{k: v for k, v in st.items() if k != "plan"} for st in podcast_setups],
             tweets,
+            regime,
         )
         if llm_result:
             per_ticker, llm_market, llm_podcast, llm_setups, llm_episodes = llm_result
@@ -2369,7 +2508,7 @@ def main(argv: list[str] | None = None) -> int:
 
     msg = build_email(
         cfg, summaries, chart_paths, heading, market, podcast, podcast_setups,
-        positions, scorecard,
+        positions, scorecard, regime,
     )
     if args.dry_run or not cfg["email"].get("enabled", True):
         # Browser-viewable preview: same HTML, but images point at the local
@@ -2385,7 +2524,7 @@ def main(argv: list[str] | None = None) -> int:
         preview.write_text(
             build_html(
                 summaries, cids, generated, heading, preview_market, podcast,
-                podcast_setups, positions, scorecard,
+                podcast_setups, positions, scorecard, regime,
             ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")
