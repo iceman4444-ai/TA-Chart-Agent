@@ -689,11 +689,14 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
                     "properties": {
                         "action": {"type": "string", "enum": ["buy", "sell"]},
                         "symbol": {"type": "string"},
+                        "security_name": {"type": "string"},
                         "quantity": {"type": "number"},
                         "price": {"type": "number"},
                         "date": {"type": "string"},
                     },
-                    "required": ["action", "symbol", "quantity", "price", "date"],
+                    "required": [
+                        "action", "symbol", "security_name", "quantity", "price", "date",
+                    ],
                     "additionalProperties": False,
                 },
             },
@@ -709,12 +712,30 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
             thinking={"type": "adaptive"},
             system=(
                 "Extract EXECUTED equity/ETF trades from these brokerage "
-                "trade-confirmation emails. Include a trade only when the "
-                "action (buy/sell), the US ticker symbol, and the share "
-                "quantity are explicitly stated; use 0 for a missing price "
-                "and the email's date if the trade date is absent. Ignore "
-                "pending orders, cancellations, options, bonds, money-market "
-                "sweeps, and marketing emails. Return an empty list if none."
+                "trade-confirmation emails.\n\n"
+                "Fidelity alerts flatten an HTML table into text with no "
+                "separators, under the header 'ActionSecurityPrice', and a "
+                "single email can hold several trades run together, e.g.\n"
+                "  ActionSecurityPriceSOLDSPOTIFY TECHNOLOGY S.A. COM "
+                "EUR0.000625543.8000BOUGHTMICRON TECHNOLOGY INC COM1012.1314\n"
+                "which is: SOLD 'SPOTIFY TECHNOLOGY S.A. COM EUR0.000625' at "
+                "543.8000, then BOUGHT 'MICRON TECHNOLOGY INC COM' at "
+                "1012.1314. Split on the BOUGHT/SOLD keywords; the trailing "
+                "number on each row is the execution price (note the security "
+                "description often ends with a par value such as 'COM "
+                "EUR0.000625' or 'COM USD0.01' — that is part of the name, "
+                "not the price).\n\n"
+                "security_name: the description as printed. symbol: the "
+                "US-listed Yahoo Finance ticker for it (SPOTIFY TECHNOLOGY "
+                "S.A. -> SPOT, MICRON TECHNOLOGY INC -> MU, AKAMAI "
+                "TECHNOLOGIES -> AKAM); leave symbol empty only if you truly "
+                "cannot identify it. quantity: the share count if the email "
+                "states one, otherwise 0 — these alerts usually omit it, and "
+                "0 simply means unknown. price: the execution price, or 0 if "
+                "absent. date: the trade date, or the email's date.\n\n"
+                "Ignore pending or cancelled orders, options, bonds, "
+                "money-market sweeps, statements, and marketing emails. "
+                "Return an empty list if there are none."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
             messages=[{"role": "user", "content": json.dumps(confirm_notes)}],
@@ -726,30 +747,55 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
 
 
 def build_positions(trades: list[dict]) -> dict[str, dict]:
-    """Net open long positions (with average buy cost) from executed trades."""
+    """Net open long positions from executed trades.
+
+    Brokerage alert emails often omit share counts, so quantities are used
+    when present and otherwise positions are tracked by lot: each buy opens
+    one, each sell closes one, and a name is still held while more buys than
+    sells have been confirmed. `qty` is None when the count is unknown.
+    """
     lots: dict[str, dict] = {}
     for trade in trades:
         symbol = (trade.get("symbol") or "").upper().strip()
         if not symbol:
             continue
-        rec = lots.setdefault(symbol, {"qty": 0.0, "cost_qty": 0.0, "cost_amt": 0.0})
-        qty = trade["quantity"]
+        rec = lots.setdefault(
+            symbol,
+            {"qty": 0.0, "known_qty": False, "buys": 0, "sells": 0,
+             "cost_qty": 0.0, "cost_amt": 0.0, "buy_prices": []},
+        )
+        qty = trade.get("quantity") or 0
+        price = trade.get("price") or 0
         if trade["action"] == "buy":
+            rec["buys"] += 1
             rec["qty"] += qty
-            price = trade.get("price") or 0
             if price > 0:
-                rec["cost_qty"] += qty
-                rec["cost_amt"] += qty * price
+                rec["buy_prices"].append(price)
+                if qty > 0:
+                    rec["cost_qty"] += qty
+                    rec["cost_amt"] += qty * price
         else:
+            rec["sells"] += 1
             rec["qty"] -= qty
-    return {
-        s: {
-            "qty": r["qty"],
-            "avg_cost": (r["cost_amt"] / r["cost_qty"]) if r["cost_qty"] else None,
+        if qty > 0:
+            rec["known_qty"] = True
+
+    positions = {}
+    for symbol, r in lots.items():
+        held = r["qty"] > 1e-4 if r["known_qty"] else r["buys"] > r["sells"]
+        if not held:
+            continue
+        if r["cost_qty"]:
+            avg_cost = r["cost_amt"] / r["cost_qty"]
+        elif r["buy_prices"]:
+            avg_cost = sum(r["buy_prices"]) / len(r["buy_prices"])
+        else:
+            avg_cost = None
+        positions[symbol] = {
+            "qty": r["qty"] if r["known_qty"] else None,
+            "avg_cost": avg_cost,
         }
-        for s, r in lots.items()
-        if r["qty"] > 1e-4
-    }
+    return positions
 
 
 def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
@@ -2004,13 +2050,21 @@ def build_html(
                 status += " · 🔻 below cost — losers average losers: do not add"
             support_cell = f"{p['support']:,.2f}" if p.get("support") else "—"
             cost_cell = f"{p['avg_cost']:,.2f}" if p.get("avg_cost") else "—"
+            qty_cell = f"{p['qty']:g}" if p.get("qty") else "—"
             block += (
-                f"<tr><td><b>{p['ticker']}</b></td><td>{p['qty']:g}</td>"
+                f"<tr><td><b>{p['ticker']}</b></td><td>{qty_cell}</td>"
                 f"<td>{cost_cell}</td>"
                 f"<td>{p['close']:,.2f}</td><td>{p['score']}</td>"
                 f"<td>{support_cell}</td><td>{status}</td></tr>"
             )
         block += "</table>"
+        if any(p.get("qty") is None for p in positions):
+            block += (
+                "<p style='color:#777;font-size:12px;max-width:860px'>Share "
+                "counts are not included in the confirmation emails, so "
+                "holdings are inferred from confirmed buy/sell activity and "
+                "average cost is the average confirmed buy price.</p>"
+            )
         sections.append(block)
     for s in summaries:
         ticker = s["ticker"]
@@ -2265,12 +2319,30 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="fetch data and render charts + email preview, but send nothing",
     )
+    parser.add_argument(
+        "--scorecard",
+        action="store_true",
+        help="print the performance scorecard for the ledger and exit (sends nothing)",
+    )
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
     ind = cfg["indicators"]
     out_dir = Path(cfg["output_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.scorecard:
+        import re as _re
+
+        html = build_scorecard(cfg)
+        if not html:
+            log("scorecard: no gradeable ledger entries yet")
+            return 0
+        text = _re.sub(r"</t[dh]>\s*<t[dh][^>]*>", " | ", html)
+        text = _re.sub(r"</tr>", "\n", text)
+        text = _re.sub(r"<[^>]+>", "", text)
+        print("\n".join(l.strip() for l in text.splitlines() if l.strip()), flush=True)
+        return 0
     # prior picks, used to tell a fresh signal from a recurring one
     ledger_rows = load_ledger_rows() if args.scan else []
 

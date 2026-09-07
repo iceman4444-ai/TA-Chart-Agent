@@ -34,6 +34,10 @@ on:
         description: "Dry run (render charts but send no email)"
         type: boolean
         default: false
+      scorecard_only:
+        description: "Print the performance scorecard to the log and stop"
+        type: boolean
+        default: false
 
 permissions:
   contents: write  # the send marker is committed back to the branch
@@ -111,6 +115,10 @@ jobs:
             label="Claude TA Morning Recap"
           else
             label="Claude TA Afternoon Recap"
+          fi
+          if [ "${{ inputs.scorecard_only }}" = "true" ]; then
+            python ta_briefing_v2.py --scorecard
+            exit 0
           fi
           args=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
