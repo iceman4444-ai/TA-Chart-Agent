@@ -42,6 +42,46 @@ def log(msg: str) -> None:
     print(f"[{datetime.now(EASTERN):%Y-%m-%d %H:%M:%S %Z}] {msg}", flush=True)
 
 
+# Sections that fell back to deterministic output this run, so the email can
+# say so instead of quietly looking thinner than usual.
+DEGRADED: list[tuple[str, str]] = []
+
+
+def note_degraded(section: str, exc: Exception) -> None:
+    """Record that a Claude-written section fell back, with a short reason."""
+    text = str(exc).lower()
+    if "credit balance" in text:
+        reason = "Anthropic API credits exhausted"
+    elif "rate limit" in text or "429" in text:
+        reason = "Anthropic API rate limit"
+    elif "api key" in text or "authentication" in text or "401" in text:
+        reason = "Anthropic API key rejected"
+    elif "overloaded" in text or "529" in text:
+        reason = "Anthropic API overloaded"
+    else:
+        reason = str(exc)[:120]
+    DEGRADED.append((section, reason))
+
+
+def degraded_banner() -> str:
+    """Visible warning listing what fell back, or empty when all is well."""
+    if not DEGRADED:
+        return ""
+    sections = sorted({s for s, _ in DEGRADED})
+    reasons = sorted({r for _, r in DEGRADED})
+    return (
+        "<div style='max-width:860px;border-left:4px solid #f6465d;"
+        "padding:8px 14px;margin-bottom:16px;background:#fff4f5'>"
+        "<p style='font-family:sans-serif;font-size:14px;margin:4px 0'>"
+        "<b>⚠️ Running on fallbacks this send.</b> "
+        + ", ".join(sections)
+        + " could not be written by Claude ("
+        + "; ".join(reasons)
+        + "). Scores, levels, sizing, the regime read and the charts are "
+        "computed locally and are unaffected.</p></div>"
+    )
+
+
 def load_config(path: Path) -> dict:
     with open(path) as fh:
         return yaml.safe_load(fh)
@@ -743,6 +783,7 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
         return json.loads(next(b.text for b in response.content if b.type == "text"))["trades"]
     except Exception as exc:
         log(f"trade parsing failed — {exc}")
+        note_degraded("Portfolio positions", exc)
         return []
 
 
@@ -877,6 +918,7 @@ def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
         return guests
     except Exception as exc:
         log(f"guest extraction failed — {exc}")
+        note_degraded("Podcast guest crossovers", exc)
         return []
 
 
@@ -1384,8 +1426,43 @@ def repeat_note(hist: dict | None, close: float) -> str:
     return text
 
 
-def append_picks_ledger(summaries: list[dict], setups: list[dict]) -> None:
-    """Record today's picks and setups for the weekly scorecard.
+def sample_controls(scored: list, picks: list, ind: dict, per_band: int = 1) -> list[dict]:
+    """A small control group of names the email never shows.
+
+    The scan only ever emails its top few, so every pick lands in the same
+    narrow score band and the ledger cannot tell whether the score predicts
+    anything. Logging one unemailed name from each lower band gives the
+    scorecard something to compare against.
+    """
+    import random
+
+    chosen_tickers = {t for _, t, _ in picks}
+    bands = ((1.0, 2.5), (2.5, 3.5), (3.5, 4.0))
+    rng = random.Random(datetime.now(EASTERN).strftime("%Y%m%d"))
+    controls = []
+    for low, high in bands:
+        pool = [
+            (score, ticker, df) for score, ticker, df in scored
+            if low <= score < high and ticker not in chosen_tickers
+        ]
+        for score, ticker, df in rng.sample(pool, min(per_band, len(pool))):
+            try:
+                controls.append({
+                    "ticker": ticker,
+                    "score": score,
+                    "close": float(df["Close"].iloc[-1]),
+                    "support": support_level(df, ind),
+                })
+                chosen_tickers.add(ticker)
+            except Exception:
+                continue
+    return controls
+
+
+def append_picks_ledger(
+    summaries: list[dict], setups: list[dict], controls: list[dict] | None = None
+) -> None:
+    """Record today's picks, setups and control names for the scorecard.
 
     The ledger holds only scan output (ticker, score, entry, support) —
     never portfolio data — so it is safe to commit to the public repo.
@@ -1408,6 +1485,8 @@ def append_picks_ledger(summaries: list[dict], setups: list[dict]) -> None:
             )
     for st in setups:
         rows.append(("setup", st["ticker"], st["score"], st["close"], st.get("support")))
+    for c in controls or []:
+        rows.append(("control", c["ticker"], c["score"], c["close"], c.get("support")))
     is_new = not LEDGER_PATH.exists()
     added = 0
     with LEDGER_PATH.open("a", newline="") as fh:
@@ -1479,6 +1558,7 @@ def build_scorecard(cfg: dict) -> str | None:
                 continue
             rec = {
                 "score": float(r["score"]),
+                "kind": r.get("kind") or "pick",
                 "rets": {},
                 "alphas": {},
                 "broke": bool(support) and bool((after["Close"] < support).any()),
@@ -1537,13 +1617,37 @@ def build_scorecard(cfg: dict) -> str | None:
         block += horizon_row(name, graded, name)
     block += "</table>"
 
-    high = [g for g in graded if g["score"] >= 4.0]
-    low = [g for g in graded if g["score"] < 4.0]
-    if high and low:
-        bucket_h = "1-Month" if any("1-Month" in g["rets"] for g in graded) else "1-Week"
+    bucket_h = "1-Month" if any("1-Month" in g["rets"] for g in graded) else "1-Week"
+
+    # By source: the scan's own picks, podcast-sourced ideas, and the
+    # unemailed control names. This is the comparison the data supports —
+    # score buckets alone are confounded, because every emailed pick is a
+    # top-of-universe score by construction.
+    sources = [
+        ("Scan picks", "pick"),
+        ("Podcast setups", "setup"),
+        ("Control (not emailed)", "control"),
+    ]
+    source_rows = "".join(
+        horizon_row(label, [g for g in graded if g["kind"] == kind], bucket_h)
+        for label, kind in sources
+    )
+    if source_rows:
         block += (
             f"<p style='max-width:860px;font-size:14px;margin-top:10px'>"
-            f"By score bucket ({bucket_h}):</p>"
+            f"By source ({bucket_h}):</p>"
+        )
+        block += header.format(first="Source") + source_rows + "</table>"
+
+    # Score buckets only among scan-side names (picks plus controls), where
+    # the score is the thing being tested rather than a selection artefact.
+    scan_side = [g for g in graded if g["kind"] in ("pick", "control")]
+    high = [g for g in scan_side if g["score"] >= 4.0]
+    low = [g for g in scan_side if g["score"] < 4.0]
+    if high and low:
+        block += (
+            f"<p style='max-width:860px;font-size:14px;margin-top:10px'>"
+            f"By score, scan-side only ({bucket_h}):</p>"
         )
         block += header.format(first="Bucket")
         block += horizon_row("Score ≥ 4.0", high, bucket_h)
@@ -1740,6 +1844,7 @@ def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
         return ideas
     except Exception as exc:
         log(f"podcast idea extraction failed — {exc}")
+        note_degraded("Podcast trade setups", exc)
         return []
 
 
@@ -1978,6 +2083,7 @@ def llm_commentary(
         )
     except Exception as exc:
         log(f"Claude commentary unavailable, using technical commentary — {exc}")
+        note_degraded("Written commentary and podcast write-ups", exc)
         return None
 
 
@@ -2223,6 +2329,7 @@ def build_html(
     score_head = "<th>Score</th><th>Support</th>" if has_score else ""
     return f"""<html><body style="font-family:sans-serif">
 <h2>{heading} — {summaries[0]['date']}</h2>
+{degraded_banner()}
 {build_tldr(regime, positions, summaries, setups)}
 <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px">
 <tr style="background:#eceff1"><th>Ticker</th>{score_head}<th>Close</th><th>1d %</th>
@@ -2345,6 +2452,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     # prior picks, used to tell a fresh signal from a recurring one
     ledger_rows = load_ledger_rows() if args.scan else []
+    controls: list[dict] = []  # unemailed names, ledgered as a scorecard baseline
 
     if args.scan:
         heading = args.heading or "Claude TA Afternoon Recap"
@@ -2372,6 +2480,13 @@ def main(argv: list[str] | None = None) -> int:
                 log(f"{ticker}: skipped — {exc}")
         scored.sort(key=lambda item: item[0], reverse=True)
         picks = scored[: scan_cfg.get("top_n", 5)]
+        controls = sample_controls(scored, picks, ind)
+        if controls:
+            log(
+                "control group: "
+                + ", ".join(f"{c['ticker']} ({c['score']})" for c in controls)
+                + " — ledgered, not emailed"
+            )
         log("top picks: " + ", ".join(f"{t} ({s})" for s, t, _ in picks))
         candidates = [(ticker, df, score) for score, ticker, df in picks]
     else:
@@ -2611,7 +2726,7 @@ def main(argv: list[str] | None = None) -> int:
         log(f"email sent to {', '.join(cfg['email']['to_addrs'])}")
         if args.scan:
             try:
-                append_picks_ledger(summaries, podcast_setups)
+                append_picks_ledger(summaries, podcast_setups, controls)
             except Exception as exc:
                 log(f"ledger append failed — {exc}")
 
