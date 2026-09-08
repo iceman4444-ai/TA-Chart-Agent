@@ -46,6 +46,13 @@ def log(msg: str) -> None:
 # say so instead of quietly looking thinner than usual.
 DEGRADED: list[tuple[str, str]] = []
 
+# Claude writes the analysis; the mechanical extractions (parsing brokerage
+# confirmations, pulling guest names, lifting tickers out of show notes) are
+# structured-output work that a small model does just as well for a fraction
+# of the cost — which is what keeps the credit balance from running dry.
+COMMENTARY_MODEL = "claude-opus-4-8"
+EXTRACT_MODEL = "claude-haiku-4-5"
+
 
 def note_degraded(section: str, exc: Exception) -> None:
     """Record that a Claude-written section fell back, with a short reason."""
@@ -747,9 +754,8 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
     try:
         client = anthropic.Anthropic()
         response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
+            model=EXTRACT_MODEL,
+            max_tokens=4000,
             system=(
                 "Extract EXECUTED equity/ETF trades from these brokerage "
                 "trade-confirmation emails.\n\n"
@@ -900,9 +906,8 @@ def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
     try:
         client = anthropic.Anthropic()
         response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
+            model=EXTRACT_MODEL,
+            max_tokens=4000,
             system=(
                 "From these podcast episode notes, list the distinct GUEST "
                 "people interviewed — real person names only, most "
@@ -1447,11 +1452,16 @@ def sample_controls(scored: list, picks: list, ind: dict, per_band: int = 1) -> 
         ]
         for score, ticker, df in rng.sample(pool, min(per_band, len(pool))):
             try:
+                close = float(df["Close"].iloc[-1])
+                sma50 = df.get(f"SMA{ind['sma_slow']}")
                 controls.append({
                     "ticker": ticker,
                     "score": score,
-                    "close": float(df["Close"].iloc[-1]),
+                    "close": close,
                     "support": support_level(df, ind),
+                    "ext_50": (close / float(sma50.iloc[-1]) - 1) * 100
+                    if sma50 is not None and pd.notna(sma50.iloc[-1]) else None,
+                    "rsi": float(df["RSI"].iloc[-1]) if pd.notna(df["RSI"].iloc[-1]) else None,
                 })
                 chosen_tickers.add(ticker)
             except Exception:
@@ -1459,46 +1469,84 @@ def sample_controls(scored: list, picks: list, ind: dict, per_band: int = 1) -> 
     return controls
 
 
+LEDGER_FIELDS = [
+    "date", "kind", "ticker", "score", "close", "support",
+    "slot", "ext_50", "rsi", "stop_pct", "regime",
+]
+
+
 def append_picks_ledger(
-    summaries: list[dict], setups: list[dict], controls: list[dict] | None = None
+    summaries: list[dict],
+    setups: list[dict],
+    controls: list[dict] | None = None,
+    slot: str = "",
+    regime: dict | None = None,
 ) -> None:
     """Record today's picks, setups and control names for the scorecard.
 
-    The ledger holds only scan output (ticker, score, entry, support) —
-    never portfolio data — so it is safe to commit to the public repo.
+    Alongside the entry price each row carries the context that entry was
+    taken in — the slot it was sent in, how far above the 50-day the name
+    was, its RSI, how far the stop sat below price, and the day's regime —
+    so the scorecard can later ask *why* an idea worked rather than only
+    whether it did. The ledger holds scan output only, never portfolio
+    data, so it is safe to commit to the public repo.
     """
     import csv
 
-    existing = set()
+    existing, prior_rows = set(), []
     if LEDGER_PATH.exists():
         with LEDGER_PATH.open() as fh:
-            existing = {
-                (r["date"], r["kind"], r["ticker"]) for r in csv.DictReader(fh)
-            }
+            prior_rows = list(csv.DictReader(fh))
+        existing = {(r["date"], r["kind"], r["ticker"]) for r in prior_rows}
+
     today = f"{datetime.now(EASTERN):%Y-%m-%d}"
+    regime_label = (regime or {}).get("label", "")
+
+    def context(src: dict, close: float) -> dict:
+        support = src.get("support")
+        return {
+            "slot": slot,
+            "ext_50": f"{src['ext_50']:.1f}" if src.get("ext_50") is not None else "",
+            "rsi": f"{float(src['rsi']):.0f}" if src.get("rsi") else "",
+            "stop_pct": f"{(close - support) / close * 100:.1f}"
+            if support and close else "",
+            "regime": regime_label,
+        }
+
     rows = []
-    for s in summaries:
-        if "score" in s:
-            rows.append(
-                ("pick", s["ticker"], s["score"],
-                 float(str(s["close"]).replace(",", "")), s.get("support"))
-            )
-    for st in setups:
-        rows.append(("setup", st["ticker"], st["score"], st["close"], st.get("support")))
-    for c in controls or []:
-        rows.append(("control", c["ticker"], c["score"], c["close"], c.get("support")))
-    is_new = not LEDGER_PATH.exists()
-    added = 0
-    with LEDGER_PATH.open("a", newline="") as fh:
-        writer = csv.writer(fh)
-        if is_new:
-            writer.writerow(["date", "kind", "ticker", "score", "close", "support"])
-        for kind, ticker, score, close, support in rows:
-            if (today, kind, ticker) in existing:
+    for kind, items in (("pick", summaries), ("setup", setups), ("control", controls or [])):
+        for item in items:
+            if "score" not in item:
                 continue
-            writer.writerow([today, kind, ticker, score, f"{close:.2f}",
-                             f"{support:.2f}" if support else ""])
+            close = float(str(item["close"]).replace(",", ""))
+            support = item.get("support")
+            rows.append({
+                "date": today, "kind": kind, "ticker": item["ticker"],
+                "score": item["score"], "close": f"{close:.2f}",
+                "support": f"{support:.2f}" if support else "",
+                **context(item, close),
+            })
+
+    # Older ledgers predate the context columns; rewrite once so the header
+    # matches rather than appending rows the reader would misalign.
+    needs_migration = bool(prior_rows) and any(
+        f not in prior_rows[0] for f in LEDGER_FIELDS
+    )
+    mode = "w" if (needs_migration or not LEDGER_PATH.exists()) else "a"
+    added = 0
+    with LEDGER_PATH.open(mode, newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=LEDGER_FIELDS, extrasaction="ignore")
+        if mode == "w":
+            writer.writeheader()
+            for old in prior_rows:
+                writer.writerow({f: old.get(f, "") for f in LEDGER_FIELDS})
+        for row in rows:
+            if (row["date"], row["kind"], row["ticker"]) in existing:
+                continue
+            writer.writerow(row)
             added += 1
+    if needs_migration:
+        log(f"ledger: migrated {len(prior_rows)} row(s) to the context schema")
     log(f"ledger: recorded {added} new entrie(s)")
 
 
@@ -1550,26 +1598,37 @@ def build_scorecard(cfg: dict) -> str | None:
             if ticker not in cache:
                 cache[ticker] = fetch_history(ticker, min(550, age + 80))
             df = cache[ticker]
-            entry = float(r["close"])
             support = float(r["support"]) if r["support"] else None
             stamp = pd.Timestamp(entry_date)
-            after = df[df.index > stamp]
-            if len(after) < 5:
+
+            # Grade from a price the alert could actually have been acted on.
+            # The 9am send goes out before the open and quotes the previous
+            # close, so its first tradable bar is that same day's open; the
+            # 5pm send sees the close, so its entry is the next open. Rows
+            # from before the slot was recorded are treated as afternoon,
+            # which is the conservative (later) entry.
+            morning = (r.get("slot") or "").strip().lower() == "morning"
+            tradable = df[df.index >= stamp] if morning else df[df.index > stamp]
+            if len(tradable) < 5:
                 continue
+            entry = float(tradable["Open"].iloc[0])
+            if entry <= 0:
+                continue
+            entry_ts = tradable.index[0]
             rec = {
                 "score": float(r["score"]),
                 "kind": r.get("kind") or "pick",
                 "rets": {},
                 "alphas": {},
-                "broke": bool(support) and bool((after["Close"] < support).any()),
+                "broke": bool(support) and bool((tradable["Close"] < support).any()),
             }
             spy_after, spy_entry = None, None
-            if spy is not None and (spy.index <= stamp).any():
-                spy_entry = float(spy[spy.index <= stamp]["Close"].iloc[-1])
-                spy_after = spy[spy.index > stamp]
+            if spy is not None and (spy.index >= entry_ts).any():
+                spy_after = spy[spy.index >= entry_ts]
+                spy_entry = float(spy_after["Open"].iloc[0])
             for name, bars in SCORECARD_HORIZONS:
-                if len(after) >= bars:
-                    ret = float(after["Close"].iloc[bars - 1]) / entry - 1
+                if len(tradable) >= bars:
+                    ret = float(tradable["Close"].iloc[bars - 1]) / entry - 1
                     rec["rets"][name] = ret
                     if spy_after is not None and len(spy_after) >= bars and spy_entry:
                         rec["alphas"][name] = ret - (
@@ -1608,9 +1667,9 @@ def build_scorecard(cfg: dict) -> str | None:
     block = (
         "<h3 style='font-family:sans-serif'>Performance Scorecard</h3>"
         "<p style='max-width:860px;font-size:14px'>How the ledger's signals "
-        "performed at each horizon (each idea graded once, from the close on "
-        "the day it was first flagged; 'vs SPY' is the average excess return "
-        "over SPY across the same windows):</p>"
+        "performed at each horizon. Each idea is graded once, entered at the "
+        "open of the first session that could actually have been traded after "
+        "the alert, and measured against SPY entered the same way:</p>"
     )
     block += header.format(first="Horizon")
     for name, _ in SCORECARD_HORIZONS:
@@ -1823,9 +1882,8 @@ def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
     try:
         client = anthropic.Anthropic()
         response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
+            model=EXTRACT_MODEL,
+            max_tokens=4000,
             system=(
                 "Extract individual stock or ETF investment ideas from these "
                 "podcast summaries. Include only names where a speaker voiced "
@@ -1950,7 +2008,7 @@ def llm_commentary(
     try:
         client = anthropic.Anthropic()
         response = client.messages.create(
-            model="claude-opus-4-8",
+            model=COMMENTARY_MODEL,
             max_tokens=16000,
             thinking={"type": "adaptive"},
             system=(
@@ -2516,6 +2574,11 @@ def main(argv: list[str] | None = None) -> int:
                     summary["support"], summary["rr"], summary["below_200"]
                 )
                 last_close = float(df["Close"].iloc[-1])
+                sma50_col = df.get(f"SMA{ind['sma_slow']}")
+                summary["ext_50"] = (
+                    (last_close / float(sma50_col.iloc[-1]) - 1) * 100
+                    if sma50_col is not None and pd.notna(sma50_col.iloc[-1]) else None
+                )
                 summary["sizing"] = position_plan(last_close, summary["support"], cfg)
                 summary["repeat"] = repeat_note(
                     signal_history(ledger_rows, ticker), last_close
@@ -2618,6 +2681,10 @@ def main(argv: list[str] | None = None) -> int:
                         "resistance": resistance_level(df, ind),
                         "earnings_days": days_to_earnings(tick),
                         "below_200": below_200day(df, ind),
+                        "ext_50": (
+                            float(df["Close"].iloc[-1]) / float(df[f"SMA{ind['sma_slow']}"].iloc[-1]) - 1
+                        ) * 100 if pd.notna(df[f"SMA{ind['sma_slow']}"].iloc[-1]) else None,
+                        "rsi": float(df["RSI"].iloc[-1]) if pd.notna(df["RSI"].iloc[-1]) else None,
                     }
                     setup["rr"] = reward_risk(
                         setup["close"], setup["support"], setup["resistance"]
@@ -2726,7 +2793,11 @@ def main(argv: list[str] | None = None) -> int:
         log(f"email sent to {', '.join(cfg['email']['to_addrs'])}")
         if args.scan:
             try:
-                append_picks_ledger(summaries, podcast_setups, controls)
+                append_picks_ledger(
+                    summaries, podcast_setups, controls,
+                    slot="morning" if "Morning" in heading else "afternoon",
+                    regime=regime,
+                )
             except Exception as exc:
                 log(f"ledger append failed — {exc}")
 
