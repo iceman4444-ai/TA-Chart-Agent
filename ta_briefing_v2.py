@@ -714,6 +714,36 @@ def fetch_podcast_feed_notes(cfg: dict) -> list[dict]:
     return capped
 
 
+def confirmation_notes(notes: list[dict]) -> list[dict]:
+    """Keep the real trade confirmations and strip them to the trade table.
+
+    A broker's "confirmation" search also catches newsletters and statements,
+    and the confirmations themselves are mostly tracking links and legal
+    boilerplate. Filtering and compressing here — rather than caching parsed
+    trades between runs — keeps the token bill down without any holdings
+    data ever being written to disk, which matters because this repo is
+    public.
+    """
+    import re
+
+    kept = []
+    for note in notes:
+        body = note.get("excerpt") or ""
+        subject = (note.get("subject") or "").lower()
+        if "trade confirmation" not in subject and not re.search(r"\b(BOUGHT|SOLD)\b", body):
+            continue
+        text = re.sub(r"https?://\S+", " ", body)
+        # the trade table runs from the Action/Security/Price header to the
+        # "full details" sign-off; keep that and drop the rest
+        match = re.search(
+            r"(Action\s*Security\s*Price.*?)(?:Full details|View trade|$)",
+            text, re.IGNORECASE | re.DOTALL,
+        )
+        text = match.group(1) if match else text
+        kept.append({**note, "excerpt": re.sub(r"\s+", " ", text).strip()[:1500]})
+    return kept
+
+
 def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
     """Executed trades parsed out of Fidelity confirmation emails.
 
@@ -855,13 +885,20 @@ def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
     portfolio = cfg.get("portfolio") or {}
     if not portfolio.get("enabled", True):
         return []
-    confirm_notes = _gmail_notes(
+    raw_notes = _gmail_notes(
         cfg,
         portfolio.get("gmail_search", "from:fidelity confirmation newer_than:90d"),
         portfolio.get("max_emails", 20),
-        3000,
+        4000,
     )
-    trades = llm_parse_trades(confirm_notes)
+    confirm_notes = confirmation_notes(raw_notes)
+    before = sum(len(n.get("excerpt") or "") for n in raw_notes)
+    after = sum(len(n.get("excerpt") or "") for n in confirm_notes)
+    log(
+        f"portfolio: {len(confirm_notes)} of {len(raw_notes)} message(s) are trade "
+        f"confirmations; {before:,} -> {after:,} chars sent for parsing"
+    )
+    trades = llm_parse_trades(confirm_notes) if confirm_notes else []
     positions = build_positions(trades)
     log(f"portfolio: parsed {len(trades)} trade(s) into {len(positions)} open position(s)")
     rows = []
@@ -887,6 +924,51 @@ def analyze_positions(cfg: dict, ind: dict) -> list[dict]:
             log(f"portfolio: a position could not be analyzed — {exc}")
     rows.sort(key=lambda r: (not r["breached"], -r["score"]))
     return rows
+
+
+EXTRACT_CACHE_PATH = Path(".extract_cache.json")
+
+
+def cached_extraction(kind: str, notes: list[dict], compute):
+    """Reuse an earlier extraction when the input episodes are unchanged.
+
+    The 9am and 5pm sends read the same 7-day podcast window, so the guest
+    and ticker extractions are usually identical work twice a day. Results
+    are keyed by a fingerprint of the episode list: unchanged feeds hit the
+    cache, new episodes miss it. Only podcast-derived data lands here (show
+    names, guests, tickers), never anything personal, so it is safe to keep
+    in this public repo. Failed extractions are never cached.
+    """
+    import hashlib
+    import json
+
+    blob = "|".join(sorted((n.get("subject") or "") for n in notes))
+    key = f"{kind}:{hashlib.sha1(blob.encode('utf-8')).hexdigest()[:16]}"
+
+    cache = {}
+    if EXTRACT_CACHE_PATH.exists():
+        try:
+            cache = json.loads(EXTRACT_CACHE_PATH.read_text())
+        except Exception:
+            cache = {}
+    if key in cache:
+        log(f"{kind}: reusing the earlier extraction (episode list unchanged)")
+        return cache[key]["value"]
+
+    failures = len(DEGRADED)
+    value = compute()
+    if len(DEGRADED) > failures:
+        return value  # the call fell back; don't freeze the failure in cache
+
+    today = f"{datetime.now(EASTERN):%Y-%m-%d}"
+    cache[key] = {"date": today, "value": value}
+    cutoff = (datetime.now(EASTERN) - timedelta(days=7)).strftime("%Y-%m-%d")
+    cache = {k: v for k, v in cache.items() if v.get("date", "") >= cutoff}
+    try:
+        EXTRACT_CACHE_PATH.write_text(json.dumps(cache, indent=1, sort_keys=True))
+    except Exception as exc:
+        log(f"{kind}: cache write failed — {exc}")
+    return value
 
 
 def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
@@ -943,7 +1025,9 @@ def fetch_guest_crossovers(cfg: dict, podcast_notes: list[dict]) -> list[dict]:
     research = cfg.get("research") or {}
     if not research.get("guest_crossover", True) or not podcast_notes:
         return []
-    guests = llm_extract_guests(podcast_notes)[: research.get("guest_max", 5)]
+    guests = cached_extraction(
+        "guests", podcast_notes, lambda: llm_extract_guests(podcast_notes)
+    )[: research.get("guest_max", 5)]
     if not guests:
         return []
     known_shows = {n["subject"].split(":")[0].strip().lower() for n in podcast_notes}
@@ -2662,7 +2746,10 @@ def main(argv: list[str] | None = None) -> int:
         if podcast_notes:
             picked = {s["ticker"] for s in summaries}
             max_setups = (cfg.get("research") or {}).get("podcast_max_setups", 3)
-            for idea in llm_extract_podcast_ideas(podcast_notes):
+            ideas = cached_extraction(
+                "ideas", podcast_notes, lambda: llm_extract_podcast_ideas(podcast_notes)
+            )
+            for idea in ideas:
                 if len(podcast_setups) >= max_setups:
                     break
                 tick = (idea.get("ticker") or "").upper().strip()
