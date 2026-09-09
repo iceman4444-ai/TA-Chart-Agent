@@ -209,6 +209,8 @@ email:
     - onulakjd@gmail.com
   cc_addrs:
     - awuahleonard@gmail.com
+    - Thomas.staleyiii@gmail.com
+    - colinrowe59@gmail.com
   # Subjects are "Claude TA Morning Recap — <date>" (9am watchlist) and
   # "Claude TA Afternoon Recap — <date>" (5pm bullish scan).
   # Password comes from the TA_SMTP_PASSWORD environment variable.
