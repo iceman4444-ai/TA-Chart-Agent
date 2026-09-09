@@ -50,7 +50,7 @@ DEGRADED: list[tuple[str, str]] = []
 # confirmations, pulling guest names, lifting tickers out of show notes) are
 # structured-output work that a small model does just as well for a fraction
 # of the cost — which is what keeps the credit balance from running dry.
-COMMENTARY_MODEL = "claude-opus-4-8"
+COMMENTARY_MODEL = "claude-opus-5"
 EXTRACT_MODEL = "claude-haiku-4-5"
 
 
