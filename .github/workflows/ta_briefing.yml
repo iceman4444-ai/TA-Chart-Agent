@@ -101,6 +101,10 @@ jobs:
           # by value format (Anthropic keys start with sk-ant-).
           SECRET_A: ${{ secrets.GOOG }}
           SECRET_B: ${{ secrets.TARECAP2 }}
+          # Preferred, unambiguous slot for the Anthropic key. Set this and a
+          # new key can be added without knowing which legacy secret above
+          # holds the key and which holds the Gmail app password.
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Optional: X/Twitter chatter for picks and podcast setups
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           # Optional: turns % -of-account sizing into share counts and dollars
@@ -110,6 +114,15 @@ jobs:
             export ANTHROPIC_API_KEY="$SECRET_A" TA_SMTP_PASSWORD="$SECRET_B"
           else
             export ANTHROPIC_API_KEY="$SECRET_B" TA_SMTP_PASSWORD="$SECRET_A"
+          fi
+          # A dedicated ANTHROPIC_API_KEY secret always wins, leaving the
+          # Gmail app password in the legacy pair untouched.
+          if [ -n "$ANTHROPIC_KEY" ]; then
+            export ANTHROPIC_API_KEY="$ANTHROPIC_KEY"
+            echo "Using the ANTHROPIC_API_KEY secret."
+          fi
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::warning::No Anthropic key found — commentary will fall back."
           fi
           if [ "${{ steps.guard.outputs.slot }}" = "morning" ]; then
             label="Claude TA Morning Recap"
