@@ -2501,6 +2501,10 @@ def build_email(
     msg["Subject"] = f"{heading} — {datetime.now(EASTERN):%Y-%m-%d}"
     msg["From"] = email_cfg["from_addr"]
     msg["To"] = ", ".join(email_cfg["to_addrs"])
+    # smtplib.send_message derives the envelope recipients from the To, Cc and
+    # Bcc headers, so setting Cc here is all that is needed to deliver to them.
+    if email_cfg.get("cc_addrs"):
+        msg["Cc"] = ", ".join(email_cfg["cc_addrs"])
     msg.set_content("Your email client does not support HTML. See attached charts.")
 
     cids = {t: make_msgid(domain="ta-chart-agent")[1:-1] for t in chart_paths}
@@ -2529,6 +2533,15 @@ def build_email(
             cid=f"<{market_html['cid']}>",
         )
     return msg
+
+
+def recipient_summary(cfg: dict) -> str:
+    """Every address the send will reach, for the run log."""
+    email_cfg = cfg["email"]
+    text = ", ".join(email_cfg["to_addrs"])
+    if email_cfg.get("cc_addrs"):
+        text += " (cc: " + ", ".join(email_cfg["cc_addrs"]) + ")"
+    return text
 
 
 def send_email(cfg: dict, msg: EmailMessage) -> None:
@@ -2873,11 +2886,11 @@ def main(argv: list[str] | None = None) -> int:
             ).replace("cid:", "")
         )
         log(f"DRY RUN — email not sent. Preview: {preview}")
-        log(f"DRY RUN — would send to: {', '.join(cfg['email']['to_addrs'])} "
+        log(f"DRY RUN — would send to: {recipient_summary(cfg)} "
             f"with subject '{msg['Subject']}'")
     else:
         send_email(cfg, msg)
-        log(f"email sent to {', '.join(cfg['email']['to_addrs'])}")
+        log(f"email sent to {recipient_summary(cfg)}")
         if args.scan:
             try:
                 append_picks_ledger(
