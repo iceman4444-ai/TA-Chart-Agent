@@ -86,10 +86,18 @@ research:
   guest_max: 5        # guests followed per run
   crossover_days: 21  # recency window for cross-show interviews
   crossover_max: 5    # crossover episode notes kept
-  # X/Twitter chatter (official API v2; requires an X_BEARER_TOKEN secret —
-  # paid X API tier with search access). Skipped silently when absent.
+  # X/Twitter chatter on the picks themselves (official API v2; requires an
+  # X_BEARER_TOKEN secret). Skipped silently when absent.
   twitter_enabled: true
   twitter_max_tickers: 6
+  # Watched X accounts: their recent posts are read for stock calls and
+  # market insight, feeding both the commentary and the trade-setup
+  # extraction, exactly like podcast guests. X bills $0.005 per post read
+  # (deduplicated within a UTC day), so ~10 handles costs a few dollars a
+  # month. Add handles with or without the leading @.
+  x_accounts: []
+  x_hours: 24          # how far back to look on each run
+  x_max_per_account: 5 # most-liked posts kept per handle
 
 # Risk sizing. Position size is derived from the distance to the stop, so it
 # is expressed as a share of the account and nothing personal lives here.

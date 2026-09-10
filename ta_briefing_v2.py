@@ -2088,6 +2088,96 @@ def fetch_tweets(cfg: dict, tickers: list[str]) -> dict[str, list[dict]]:
     return out
 
 
+def fetch_x_posts(cfg: dict) -> list[dict]:
+    """Recent posts from the watched X accounts.
+
+    Accounts are batched into combined `from:a OR from:b` queries so one
+    request covers many handles — X bills per post read ($0.005, deduplicated
+    within a UTC day), so the batching keeps both the request count and the
+    bill down. Silent no-op without X_BEARER_TOKEN or a configured list.
+    """
+    import requests
+    from datetime import timezone
+
+    token = os.environ.get("X_BEARER_TOKEN")
+    research = cfg.get("research") or {}
+    accounts = [a.lstrip("@").strip() for a in (research.get("x_accounts") or []) if a.strip()]
+    if not accounts:
+        return []
+    if not token:
+        log("X accounts: X_BEARER_TOKEN not set; skipping")
+        return []
+
+    hours = research.get("x_hours", 24)
+    per_account = research.get("x_max_per_account", 5)
+    start = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    batches, current = [], []
+    for handle in accounts:
+        current.append(handle)
+        if len(" OR ".join(f"from:{h}" for h in current)) > 400:
+            batches.append(current[:-1])
+            current = [handle]
+    if current:
+        batches.append(current)
+
+    posts, reads = [], 0
+    for batch in batches:
+        query = "(" + " OR ".join(f"from:{h}" for h in batch) + ") -is:retweet -is:reply"
+        try:
+            resp = requests.get(
+                "https://api.twitter.com/2/tweets/search/recent",
+                params={
+                    "query": query,
+                    "start_time": start,
+                    "max_results": min(100, max(10, per_account * len(batch))),
+                    "tweet.fields": "created_at,public_metrics",
+                    "expansions": "author_id",
+                    "user.fields": "username",
+                },
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=20,
+            )
+            if resp.status_code != 200:
+                log(f"X accounts: HTTP {resp.status_code} for {len(batch)} handle(s); skipping the rest")
+                break
+            body = resp.json()
+            names = {
+                u["id"]: u["username"]
+                for u in (body.get("includes", {}) or {}).get("users", [])
+            }
+            by_author: dict[str, list] = {}
+            for t in body.get("data") or []:
+                by_author.setdefault(names.get(t.get("author_id"), "?"), []).append(t)
+                reads += 1
+            for handle, items in by_author.items():
+                items.sort(
+                    key=lambda t: (t.get("public_metrics") or {}).get("like_count", 0),
+                    reverse=True,
+                )
+                for t in items[:per_account]:
+                    posts.append({
+                        "subject": f"@{handle}",
+                        "author": handle,
+                        "date": (t.get("created_at") or "")[:16],
+                        "likes": (t.get("public_metrics") or {}).get("like_count", 0),
+                        "excerpt": re.sub(r"\s+", " ", t.get("text", "")).strip(),
+                    })
+        except Exception as exc:
+            log(f"X accounts: fetch failed — {exc}; skipping the rest")
+            break
+
+    if posts:
+        who = ", ".join(sorted({f"@{p['author']}" for p in posts}))
+        log(
+            f"X accounts: {len(posts)} post(s) kept from {who} "
+            f"({reads} read, ~${reads * 0.005:.2f})"
+        )
+    else:
+        log(f"X accounts: nothing new from {len(accounts)} handle(s) in {hours}h")
+    return posts
+
+
 def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
     """Tickers with an explicit investment view voiced in the podcast notes."""
     if not podcast_notes or not os.environ.get("ANTHROPIC_API_KEY"):
@@ -2123,7 +2213,7 @@ def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
             max_tokens=4000,
             system=(
                 "Extract individual stock or ETF investment ideas from these "
-                "podcast summaries. Include only names where a speaker voiced "
+                "podcast summaries and posts from watched market commentators. Include only names where a speaker voiced "
                 "an explicit view. ticker: the US-listed Yahoo Finance symbol "
                 "(resolve company names to tickers; skip non-US or ambiguous "
                 "names). thesis: one sentence stating the speaker's view and "
@@ -2782,6 +2872,7 @@ def main(argv: list[str] | None = None) -> int:
     # prior picks, used to tell a fresh signal from a recurring one
     ledger_rows = load_ledger_rows() if args.scan else []
     controls: list[dict] = []  # unemailed names, ledgered as a scorecard baseline
+    x_posts: list[dict] = []   # posts from the watched X accounts
 
     if args.scan:
         heading = args.heading or "Claude TA Afternoon Recap"
@@ -2912,6 +3003,7 @@ def main(argv: list[str] | None = None) -> int:
             for s in summaries
         ]
         research_notes = fetch_research_notes(cfg)
+        x_posts = fetch_x_posts(cfg)
         podcast_notes = fetch_podcast_notes(cfg) + fetch_podcast_feed_notes(cfg)
         podcast_notes += fetch_guest_crossovers(cfg, podcast_notes)
         for idx, note in enumerate(podcast_notes, 1):
@@ -2933,8 +3025,9 @@ def main(argv: list[str] | None = None) -> int:
         if podcast_notes:
             picked = {s["ticker"] for s in summaries}
             max_setups = (cfg.get("research") or {}).get("podcast_max_setups", 3)
+            idea_notes = podcast_notes + x_posts
             ideas = cached_extraction(
-                "ideas", podcast_notes, lambda: llm_extract_podcast_ideas(podcast_notes)
+                "ideas", idea_notes, lambda: llm_extract_podcast_ideas(idea_notes)
             )
             for idea in ideas:
                 if len(podcast_setups) >= max_setups:
@@ -2991,7 +3084,7 @@ def main(argv: list[str] | None = None) -> int:
             overview["stats"],
             podcast_notes,
             [{k: v for k, v in st.items() if k != "plan"} for st in podcast_setups],
-            tweets,
+            tweets or {"watched_accounts": x_posts},
             regime,
         )
         if llm_result:
