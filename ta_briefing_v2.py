@@ -16,6 +16,7 @@ is never stored in config.yaml.
 import argparse
 import json
 import os
+import re
 import smtplib
 import sys
 from datetime import datetime, timedelta
@@ -52,6 +53,10 @@ DEGRADED: list[tuple[str, str]] = []
 # of the cost — which is what keeps the credit balance from running dry.
 COMMENTARY_MODEL = "claude-opus-5"
 EXTRACT_MODEL = "claude-haiku-4-5"
+# Rare, hard analysis — what the track record implies, whether the method
+# holds up — runs on the frontier model. Infrequent enough that its higher
+# per-token price is a rounding error next to the daily calls.
+ANALYST_MODEL = "claude-fable-5-1"
 
 
 def note_degraded(section: str, exc: Exception) -> None:
@@ -1637,18 +1642,153 @@ def append_picks_ledger(
 SCORECARD_HORIZONS = (("1-Week", 5), ("1-Month", 21), ("1-Year", 252))
 
 
-def build_scorecard(cfg: dict) -> str | None:
-    """HTML for the Performance Scorecard across 1-week/1-month/1-year.
+def fable_report(system: str, payload: str, label: str, effort: str = "high") -> str | None:
+    """Run one deep-reasoning analysis pass and return its prose report.
 
-    Grades every ledger entry with at least a week of history: forward
-    return at each horizon that has elapsed, the same-window SPY return
-    (alpha), and whether the recorded support broke after entry. Returns
-    None when there is nothing gradeable yet.
+    These are the rare, hard questions — what the ledger implies, whether the
+    methodology holds up — so they use the frontier model rather than the
+    daily commentary one. Streamed because Fable can think for minutes on a
+    single request, which would otherwise risk an HTTP timeout.
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        log(f"{label}: ANTHROPIC_API_KEY not set")
+        return None
+    try:
+        import anthropic
+    except ImportError:
+        log(f"{label}: the anthropic package is not installed")
+        return None
+    try:
+        client = anthropic.Anthropic()
+        log(f"{label}: asking {ANALYST_MODEL} (effort={effort}); this can take several minutes")
+        with client.messages.stream(
+            model=ANALYST_MODEL,
+            max_tokens=32000,
+            # Fable's thinking is always on; passing budget_tokens is rejected.
+            output_config={"effort": effort},
+            system=system,
+            messages=[{"role": "user", "content": payload}],
+        ) as stream:
+            response = stream.get_final_message()
+        if response.stop_reason == "refusal":
+            log(f"{label}: the model declined this request")
+            return None
+        text = "\n".join(b.text for b in response.content if b.type == "text").strip()
+        usage = response.usage
+        log(
+            f"{label}: done — {usage.input_tokens:,} in / {usage.output_tokens:,} out "
+            f"(~${usage.input_tokens * 10 / 1e6 + usage.output_tokens * 50 / 1e6:.2f})"
+        )
+        return text or None
+    except Exception as exc:
+        log(f"{label} failed — {exc}")
+        note_degraded(label, exc)
+        return None
+
+
+POSTMORTEM_SYSTEM = (
+    "You are a skeptical quantitative analyst reviewing a personal stock-"
+    "screening system's own track record. You are given every graded idea it "
+    "has produced: the entry conditions it recorded and what actually "
+    "happened afterwards.\n\n"
+    "Fields per row: ticker, date, kind (pick = the momentum scan's top-5, "
+    "setup = a ticker a podcast guest voiced a view on, control = a name "
+    "sampled from the universe and deliberately never emailed), slot "
+    "(morning/afternoon), score (the system's 1-5 bullishness, where scan "
+    "picks are by construction always ~4-5 so they carry almost no variance), "
+    "ext_50 (percent above the 50-day average at entry), rsi, stop_pct "
+    "(percent below entry the stop sat), regime (the tape that day), rets "
+    "and alphas (forward return and excess return over SPY at each horizon), "
+    "and broke (whether the recorded support level was breached).\n\n"
+    "Answer three questions, in this order:\n"
+    "1. What entry conditions actually separate the winners from the losers? "
+    "Give the numbers you computed.\n"
+    "2. Over 60% of ideas breach their stop. Test the obvious hypothesis — "
+    "that the scan buys names already extended above the 50-day — against "
+    "ext_50 and rsi, and say plainly whether the data supports it.\n"
+    "3. Propose at most three specific, testable changes to the scoring or "
+    "entry rules, each with the evidence behind it and what result would "
+    "falsify it.\n\n"
+    "Be rigorous about sample size: say explicitly when a split is too small "
+    "to conclude anything, and prefer 'the data cannot tell us' over a "
+    "confident story. Note confounds — in particular that kind and score are "
+    "nearly collinear. Do not invent data or cite rows that are not present. "
+    "Write plain prose with concrete figures, no preamble."
+)
+
+AUDIT_SYSTEM = (
+    "You are auditing the methodology of a personal trading-signal system, "
+    "not its code style. You are given its full source, its configuration, "
+    "and its current performance scorecard.\n\n"
+    "Hunt for reasoning flaws that would make its numbers or its advice "
+    "misleading: lookahead or survivorship bias, entry and exit prices that "
+    "could not actually be traded, returns measured over windows that do not "
+    "match their labels, double-counted or deduplicated-away samples, "
+    "selection effects that make a metric flatter itself, indicators computed "
+    "on the wrong bars, stop or support logic that cannot fire when claimed, "
+    "and statistics quoted with more confidence than the sample supports.\n\n"
+    "One known example, already fixed, shows the kind of thing worth "
+    "reporting: the 9am send quoted the previous close as the entry price "
+    "even though the reader could not trade until the next open, flattering "
+    "every morning pick. Find the ones still there.\n\n"
+    "For each finding give the function or config key involved, what is wrong, "
+    "the concrete consequence for the numbers or the user's decisions, and how "
+    "confident you are. Order by severity. Report only defensible findings — "
+    "say so if the system is sound in an area rather than padding the list. "
+    "Ignore cosmetics, naming and formatting entirely."
+)
+
+
+def run_postmortem(cfg: dict) -> str | None:
+    """Ask the frontier model what the ledger implies about the system."""
+    graded = grade_ledger(cfg)
+    if len(graded) < 20:
+        log(f"post-mortem: only {len(graded)} graded idea(s) — too few to analyse")
+        return None
+    rows = [
+        {
+            k: g[k] for k in
+            ("ticker", "date", "kind", "slot", "score", "ext_50", "rsi",
+             "stop_pct", "regime", "broke")
+        } | {
+            "ret": {h: round(v * 100, 2) for h, v in g["rets"].items()},
+            "vs_spy": {h: round(v * 100, 2) for h, v in g["alphas"].items()},
+        }
+        for g in graded
+    ]
+    log(f"post-mortem: analysing {len(rows)} graded ideas")
+    return fable_report(
+        POSTMORTEM_SYSTEM, json.dumps(rows, separators=(",", ":")), "post-mortem"
+    )
+
+
+def run_audit(cfg: dict) -> str | None:
+    """Ask the frontier model what is wrong with the system's methodology."""
+    source = Path(__file__).read_text()
+    config_text = Path("config.yaml").read_text() if Path("config.yaml").exists() else ""
+    scorecard = build_scorecard(cfg) or "(no gradeable history yet)"
+    payload = (
+        "=== ta_briefing_v2.py ===\n" + source
+        + "\n\n=== config.yaml ===\n" + config_text
+        + "\n\n=== current scorecard ===\n" + re.sub(r"<[^>]+>", " ", scorecard)
+    )
+    log(f"audit: reviewing {len(payload):,} chars of source, config and results")
+    return fable_report(AUDIT_SYSTEM, payload, "audit")
+
+
+def grade_ledger(cfg: dict) -> list[dict]:
+    """Every gradeable ledger entry with its outcome and entry context.
+
+    Grades each entry that has at least a week of history: forward return at
+    each horizon that has elapsed, the same-window SPY return (alpha), and
+    whether the recorded support broke after entry. The entry conditions are
+    carried through untouched so callers can ask what predicted the outcome,
+    not just what it was.
     """
     import csv
 
     if not LEDGER_PATH.exists():
-        return None
+        return []
     with LEDGER_PATH.open() as fh:
         rows = list(csv.DictReader(fh))[-5000:]
     today = datetime.now(EASTERN).date()
@@ -1700,8 +1840,15 @@ def build_scorecard(cfg: dict) -> str | None:
                 continue
             entry_ts = tradable.index[0]
             rec = {
+                "ticker": ticker,
+                "date": r["date"],
                 "score": float(r["score"]),
                 "kind": r.get("kind") or "pick",
+                "slot": r.get("slot") or "",
+                "ext_50": r.get("ext_50") or "",
+                "rsi": r.get("rsi") or "",
+                "stop_pct": r.get("stop_pct") or "",
+                "regime": r.get("regime") or "",
                 "rets": {},
                 "alphas": {},
                 "broke": bool(support) and bool((tradable["Close"] < support).any()),
@@ -1722,6 +1869,12 @@ def build_scorecard(cfg: dict) -> str | None:
                 graded.append(rec)
         except Exception:
             continue
+    return graded
+
+
+def build_scorecard(cfg: dict) -> str | None:
+    """HTML for the Performance Scorecard across 1-week/1-month/1-year."""
+    graded = grade_ledger(cfg)
     if not graded:
         return None
 
@@ -2586,12 +2739,33 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print the performance scorecard for the ledger and exit (sends nothing)",
     )
+    parser.add_argument(
+        "--postmortem",
+        action="store_true",
+        help="deep-analyse the ledger for what predicts outcomes, then exit",
+    )
+    parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="deep-review this system's own methodology for flaws, then exit",
+    )
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
     ind = cfg["indicators"]
     out_dir = Path(cfg["output_dir"])
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.postmortem or args.audit:
+        report = run_postmortem(cfg) if args.postmortem else run_audit(cfg)
+        if not report:
+            log("no report produced")
+            return 0
+        print("\n" + report + "\n", flush=True)
+        out = out_dir / ("postmortem.md" if args.postmortem else "audit.md")
+        out.write_text(report)
+        log(f"report written to {out}")
+        return 0
 
     if args.scorecard:
         import re as _re

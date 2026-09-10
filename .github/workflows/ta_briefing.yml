@@ -38,6 +38,14 @@ on:
         description: "Print the performance scorecard to the log and stop"
         type: boolean
         default: false
+      analysis:
+        description: "Deep analysis (Fable): ledger post-mortem or methodology audit"
+        type: choice
+        options:
+          - none
+          - postmortem
+          - audit
+        default: none
 
 permissions:
   contents: write  # the send marker is committed back to the branch
@@ -129,6 +137,14 @@ jobs:
           else
             label="Claude TA Afternoon Recap"
           fi
+          if [ "${{ inputs.analysis }}" = "postmortem" ]; then
+            python ta_briefing_v2.py --postmortem
+            exit 0
+          fi
+          if [ "${{ inputs.analysis }}" = "audit" ]; then
+            python ta_briefing_v2.py --audit
+            exit 0
+          fi
           if [ "${{ inputs.scorecard_only }}" = "true" ]; then
             python ta_briefing_v2.py --scorecard
             exit 0
@@ -144,7 +160,15 @@ jobs:
           fi
 
       - name: Record send marker
-        if: steps.guard.outputs.go == 'true' && inputs.dry_run != true
+        # Only a run that actually emailed may claim the slot. Report-only
+        # runs (scorecard, post-mortem, audit) exit before sending, and
+        # marking the slot would suppress that day's real recap.
+        if: >-
+          steps.guard.outputs.go == 'true'
+          && inputs.dry_run != true
+          && inputs.scorecard_only != true
+          && inputs.analysis != 'postmortem'
+          && inputs.analysis != 'audit'
         run: |
           echo "${{ steps.guard.outputs.today }} ${{ steps.guard.outputs.slot }}" >> .last-send
           tail -n 14 .last-send > .last-send.tmp && mv .last-send.tmp .last-send
@@ -166,8 +190,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ta-briefing-charts
-          # PNGs only: the preview HTML can contain portfolio data, and
-          # artifacts on a public repo are downloadable by anyone.
-          path: output/*.png
+          # PNGs and analysis reports only: the preview HTML can contain
+          # portfolio data, and artifacts on a public repo are downloadable
+          # by anyone. Reports cover the scan's own record, not holdings.
+          path: |
+            output/*.png
+            output/postmortem.md
+            output/audit.md
           retention-days: 14
 # vim: set ft=yaml:
