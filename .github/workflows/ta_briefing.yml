@@ -73,12 +73,20 @@ jobs:
           elif [ "$event" = "push" ]; then
             go=true
           else
-            # Scheduled run: wide delay-tolerant windows + one-send-per-slot
-            if [ "$hour" -ge 7 ] && [ "$hour" -le 12 ]; then slot=morning
-            elif [ "$hour" -ge 15 ] && [ "$hour" -le 21 ]; then slot=afternoon
-            else slot=""; fi
+            # Scheduled run: take the slot from WHICH cron fired, not from the
+            # hour it actually ran. GitHub routinely delays scheduled runs by
+            # hours — observed ~4h — which previously pushed the morning crons
+            # past the morning window and silently killed the 9am recap for
+            # days. The cron expression states the intent and cannot drift;
+            # the .last-send marker still guarantees one send per slot per day.
+            case "${{ github.event.schedule }}" in
+              "0 13 "*|"0 14 "*|"0 15 "*) slot=morning ;;
+              "0 21 "*|"0 22 "*|"0 23 "*) slot=afternoon ;;
+              *) slot="" ;;
+            esac
+            echo "Cron '${{ github.event.schedule }}' -> $slot slot (now ${hour}:xx ET)"
             if [ -z "$slot" ]; then
-              echo "Skipping: ${hour}:xx ET is outside the send windows."
+              echo "Skipping: unrecognised cron schedule."
             elif grep -qx "$today $slot" .last-send 2>/dev/null; then
               echo "Skipping: $slot recap already sent today."
             else
