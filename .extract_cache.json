@@ -12,6 +12,19 @@
    "Libby Cantrill"
   ]
  },
+ "guests:63874a3174783332": {
+  "date": "2026-09-10",
+  "value": [
+   "Matt Barrie",
+   "Tina Fordham",
+   "Greg Peters",
+   "Heath Terry",
+   "Molly Pieroni",
+   "Scott Glenn",
+   "Tyler Gardner",
+   "Inigo Fraser Jenkins"
+  ]
+ },
  "guests:bd5c6939d082a2e8": {
   "date": "2026-09-09",
   "value": [
@@ -44,6 +57,21 @@
     "sentiment": "neutral",
     "thesis": "Scott Glenn, VP of Asset Protection at Home Depot, discusses the company's response to organized retail crime and shoplifting challenges affecting retail operations and inventory management.",
     "ticker": "HD"
+   }
+  ]
+ },
+ "ideas:718ccbcc24d295fd": {
+  "date": "2026-09-10",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Molly Pieroni at Yacktman Asset Management sees U-Haul as having value with strong services and a durable moat to withstand inflation concerns, per Schwab Network.",
+    "ticker": "UHAL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Molly Pieroni at Yacktman Asset Management believes Alphabet has significant value as a Mag 7 company with a suite of tech products and potential to accelerate from AI innovation, per Schwab Network.",
+    "ticker": "GOOGL"
    }
   ]
  },
