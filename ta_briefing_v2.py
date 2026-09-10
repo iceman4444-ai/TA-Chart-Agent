@@ -1485,7 +1485,9 @@ def signal_history(rows: list[dict], ticker: str, window: int = 30) -> dict | No
     today = datetime.now(EASTERN).date()
     prior = []
     for r in rows:
-        if r["ticker"] != ticker:
+        # Controls are never emailed, so a name sampled as one earlier is
+        # still a genuinely new signal the first time it is actually sent.
+        if r["ticker"] != ticker or (r.get("kind") or "pick") == "control":
             continue
         try:
             d = datetime.strptime(r["date"], "%Y-%m-%d").date()
@@ -1520,26 +1522,26 @@ def repeat_note(hist: dict | None, close: float) -> str:
     return text
 
 
-def sample_controls(scored: list, picks: list, ind: dict, per_band: int = 1) -> list[dict]:
-    """A small control group of names the email never shows.
+def sample_controls(scored: list, picks: list, ind: dict, count: int = 3) -> list[dict]:
+    """A control group of near-miss names the email never shows.
 
-    The scan only ever emails its top few, so every pick lands in the same
-    narrow score band and the ledger cannot tell whether the score predicts
-    anything. Logging one unemailed name from each lower band gives the
-    scorecard something to compare against.
+    Drawn from the ranks just outside the top few (by default 6th-30th), so
+    the controls sit in the same score band as the picks. Sampling weak,
+    low-scored names instead would only ever prove that strong names differ
+    from weak ones; near-misses ask the question that matters — whether
+    being top-5 beats being merely good.
     """
     import random
 
     chosen_tickers = {t for _, t, _ in picks}
-    bands = ((1.0, 2.5), (2.5, 3.5), (3.5, 4.0))
     rng = random.Random(datetime.now(EASTERN).strftime("%Y%m%d"))
+    pool = [
+        (score, ticker, df) for score, ticker, df in scored[len(picks):30]
+        if ticker not in chosen_tickers
+    ]
     controls = []
-    for low, high in bands:
-        pool = [
-            (score, ticker, df) for score, ticker, df in scored
-            if low <= score < high and ticker not in chosen_tickers
-        ]
-        for score, ticker, df in rng.sample(pool, min(per_band, len(pool))):
+    if pool:
+        for score, ticker, df in rng.sample(pool, min(count, len(pool))):
             try:
                 close = float(df["Close"].iloc[-1])
                 sma50 = df.get(f"SMA{ind['sma_slow']}")
@@ -1703,9 +1705,13 @@ POSTMORTEM_SYSTEM = (
     "Answer three questions, in this order:\n"
     "1. What entry conditions actually separate the winners from the losers? "
     "Give the numbers you computed.\n"
-    "2. Over 60% of ideas breach their stop. Test the obvious hypothesis — "
-    "that the scan buys names already extended above the 50-day — against "
-    "ext_50 and rsi, and say plainly whether the data supports it.\n"
+    "2. Work out the breach rate yourself from the data rather than assuming "
+    "one, then test the obvious hypothesis for it — that the scan buys names "
+    "already extended above the 50-day — against ext_50 and rsi, and say "
+    "plainly whether the data supports it. Note that 'support' is defined as "
+    "the nearest level below price, which for a top-momentum name is usually "
+    "the 20-day average, so a high breach rate may describe that definition "
+    "rather than the ideas.\n"
     "3. Propose at most three specific, testable changes to the scoring or "
     "entry rules, each with the evidence behind it and what result would "
     "falsify it.\n\n"
@@ -1805,10 +1811,14 @@ def grade_ledger(cfg: dict) -> list[dict]:
             d = datetime.strptime(r["date"], "%Y-%m-%d").date()
         except ValueError:
             continue
-        prev = last_seen.get(r["ticker"])
+        # Key on (kind, ticker): a name that appeared as a control and later
+        # as a pick is two different claims, and collapsing them attributed
+        # the idea to the wrong bucket and dropped the pick.
+        key = (r.get("kind") or "pick", r["ticker"])
+        prev = last_seen.get(key)
         if prev is None or (d - prev).days > 30:
             deduped.append(r)
-        last_seen[r["ticker"]] = d
+        last_seen[key] = d
     rows = deduped
 
     graded, cache = [], {}
@@ -1851,7 +1861,8 @@ def grade_ledger(cfg: dict) -> list[dict]:
                 "regime": r.get("regime") or "",
                 "rets": {},
                 "alphas": {},
-                "broke": bool(support) and bool((tradable["Close"] < support).any()),
+                "stopped": {},
+                "brokes": {},
             }
             spy_after, spy_entry = None, None
             if spy is not None and (spy.index >= entry_ts).any():
@@ -1859,8 +1870,32 @@ def grade_ledger(cfg: dict) -> list[dict]:
                 spy_entry = float(spy_after["Open"].iloc[0])
             for name, bars in SCORECARD_HORIZONS:
                 if len(tradable) >= bars:
-                    ret = float(tradable["Close"].iloc[bars - 1]) / entry - 1
+                    window = tradable.iloc[:bars]
+                    ret = float(window["Close"].iloc[-1]) / entry - 1
                     rec["rets"][name] = ret
+
+                    # Whether the stop fired *within this horizon* — the old
+                    # flag scanned all history, so a 1-week row reported
+                    # breaches that happened months later.
+                    breached = (
+                        [i for i, c in enumerate(window["Close"]) if c < support]
+                        if support else []
+                    )
+                    rec["brokes"][name] = bool(breached)
+
+                    # The return of the advice actually given: exit at the
+                    # next open after the first close below support, rather
+                    # than holding to the horizon regardless.
+                    if breached:
+                        nxt = breached[0] + 1
+                        exit_px = float(
+                            tradable["Open"].iloc[nxt] if nxt < len(tradable)
+                            else window["Close"].iloc[-1]
+                        )
+                        rec["stopped"][name] = exit_px / entry - 1
+                    else:
+                        rec["stopped"][name] = ret
+
                     if spy_after is not None and len(spy_after) >= bars and spy_entry:
                         rec["alphas"][name] = ret - (
                             float(spy_after["Close"].iloc[bars - 1]) / spy_entry - 1
@@ -1885,28 +1920,36 @@ def build_scorecard(cfg: dict) -> str | None:
         n = len(sample)
         rets = [g["rets"][horizon] for g in sample]
         alphas = [g["alphas"][horizon] for g in sample if horizon in g["alphas"]]
+        stops = [g["stopped"][horizon] for g in sample if horizon in g["stopped"]]
         hit = sum(1 for x in rets if x > 0) / n * 100
         avg = sum(rets) / n * 100
         alpha = f"{sum(alphas) / len(alphas) * 100:+.1f}%" if alphas else "—"
-        broke = sum(1 for g in sample if g["broke"]) / n * 100
+        stopped = f"{sum(stops) / len(stops) * 100:+.1f}%" if stops else "—"
+        broke = sum(1 for g in sample if g["brokes"].get(horizon)) / n * 100
         return (
             f"<tr><td>{label}</td><td>{n}</td><td>{hit:.0f}%</td>"
-            f"<td>{avg:+.1f}%</td><td>{alpha}</td><td>{broke:.0f}%</td></tr>"
+            f"<td>{avg:+.1f}%</td><td>{stopped}</td><td>{alpha}</td>"
+            f"<td>{broke:.0f}%</td></tr>"
         )
 
     header = (
         "<table border='1' cellpadding='6' cellspacing='0' "
         "style='border-collapse:collapse;font-size:14px'>"
         "<tr style='background:#eceff1'><th>{first}</th><th>N</th>"
-        "<th>Hit rate</th><th>Avg return</th><th>Avg vs SPY</th>"
-        "<th>Support broke</th></tr>"
+        "<th>Hit rate</th><th>Avg held</th><th>Avg if stopped out</th>"
+        "<th>Avg vs SPY</th><th>Support broke</th></tr>"
     )
     block = (
         "<h3 style='font-family:sans-serif'>Performance Scorecard</h3>"
         "<p style='max-width:860px;font-size:14px'>How the ledger's signals "
         "performed at each horizon. Each idea is graded once, entered at the "
         "open of the first session that could actually have been traded after "
-        "the alert, and measured against SPY entered the same way:</p>"
+        "the alert, and measured against SPY entered the same way. "
+        "<b>Avg held</b> holds to the horizon regardless; <b>avg if stopped "
+        "out</b> follows the advice these emails actually give — exit at the "
+        "next open after the first close below support — and is the column to "
+        "judge the system by. Breach rates are within each horizon, not "
+        "ever-since-entry.</p>"
     )
     block += header.format(first="Horizon")
     for name, _ in SCORECARD_HORIZONS:
