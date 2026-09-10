@@ -8,19 +8,24 @@ on:
     paths:
       - ".trigger-send"
   schedule:
-    # GitHub Actions cron is UTC only, so each ET slot gets EDT and EST
-    # entries plus a late self-heal retry. GitHub can delay crons by hours,
-    # so the guard uses wide ET windows (morning 7-12, afternoon 15-21) and
-    # a .last-send marker to guarantee exactly one send per slot per day.
+    # Never schedule on the hour. GitHub warns that "high load times include
+    # the start of every hour" and to "schedule your workflow to run at a
+    # different time of the hour" — at :00 these runs were queuing 2-4 hours,
+    # which is what pushed the morning recap out of its window for days.
     #
-    # Morning recap (~9:00am ET) + retry
-    - cron: "0 13 * * 1-5"
-    - cron: "0 14 * * 1-5"
-    - cron: "0 15 * * 1-5"
-    # Afternoon recap (~5:00pm ET) + retry
-    - cron: "0 21 * * 1-5"
-    - cron: "0 22 * * 1-5"
-    - cron: "0 23 * * 1-5"
+    # Times are UTC, so each ET slot needs an EDT and an EST entry plus a
+    # retry; the first one to fire sends and .last-send makes the rest no-ops.
+    # Each is set ~7 minutes before the target because the run itself takes
+    # about that long, so the mail lands on the hour rather than after it.
+    #
+    # Morning recap — mail at ~9:00am EDT (~8:00am EST) + retries
+    - cron: "53 12 * * 1-5"
+    - cron: "53 13 * * 1-5"
+    - cron: "53 14 * * 1-5"
+    # Afternoon recap — mail at ~5:30pm EDT (~4:30pm EST), after the close
+    - cron: "23 21 * * 1-5"
+    - cron: "23 22 * * 1-5"
+    - cron: "23 23 * * 1-5"
   workflow_dispatch:
     inputs:
       mode:
@@ -80,8 +85,8 @@ jobs:
             # days. The cron expression states the intent and cannot drift;
             # the .last-send marker still guarantees one send per slot per day.
             case "${{ github.event.schedule }}" in
-              "0 13 "*|"0 14 "*|"0 15 "*) slot=morning ;;
-              "0 21 "*|"0 22 "*|"0 23 "*) slot=afternoon ;;
+              "53 12 "*|"53 13 "*|"53 14 "*) slot=morning ;;
+              "23 21 "*|"23 22 "*|"23 23 "*) slot=afternoon ;;
               *) slot="" ;;
             esac
             echo "Cron '${{ github.event.schedule }}' -> $slot slot (now ${hour}:xx ET)"
