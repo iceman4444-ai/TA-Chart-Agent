@@ -1,4 +1,17 @@
 {
+ "guests:2acf71cbda3c6aca": {
+  "date": "2026-09-10",
+  "value": [
+   "Inigo Fraser Jenkins",
+   "Walter Russell Mead",
+   "Greg Peters",
+   "Tina Fordham",
+   "Heath Terry",
+   "Molly Pieroni",
+   "Mike Reid",
+   "Libby Cantrill"
+  ]
+ },
  "guests:bd5c6939d082a2e8": {
   "date": "2026-09-09",
   "value": [
@@ -17,6 +30,21 @@
    "Kathryn Anne Edwards",
    "Walter Russell Mead",
    "Dan Chung"
+  ]
+ },
+ "ideas:2acf71cbda3c6aca": {
+  "date": "2026-09-10",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Inigo Fraser Jenkins, Chief Investment Strategist at AllianceBernstein, makes the case for gold as money and argues it should play a role in portfolios during a period of higher expected future inflation and declining diversification benefits from traditional assets.",
+    "ticker": "GLD"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Scott Glenn, VP of Asset Protection at Home Depot, discusses the company's response to organized retail crime and shoplifting challenges affecting retail operations and inventory management.",
+    "ticker": "HD"
+   }
   ]
  },
  "ideas:bd5c6939d082a2e8": {

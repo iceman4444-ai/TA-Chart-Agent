@@ -290,3 +290,13 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime
 2026-09-09,control,IRM,2.4,115.22,112.67,afternoon,-5.4,40,2.2,Risk-on
 2026-09-09,control,CCI,2.6,75.18,69.72,afternoon,-1.3,46,7.3,Risk-on
 2026-09-09,control,ARM,3.7,264.23,252.79,afternoon,-2.3,53,4.3,Risk-on
+2026-09-10,pick,BG,4.6,125.60,122.85,morning,10.1,66,2.2,Mixed
+2026-09-10,pick,HPQ,4.6,32.78,30.38,morning,19.0,64,7.3,Mixed
+2026-09-10,pick,SNDK,4.6,1684.47,1596.46,morning,10.4,57,5.2,Mixed
+2026-09-10,pick,MSTR,4.5,129.25,125.81,morning,21.7,56,2.7,Mixed
+2026-09-10,pick,HOOD,4.5,113.80,110.68,morning,10.1,57,2.7,Mixed
+2026-09-10,setup,GLD,2.5,400.05,397.87,morning,2.4,48,0.5,Mixed
+2026-09-10,setup,HD,1.7,306.73,284.85,morning,-8.3,31,7.1,Mixed
+2026-09-10,control,L,2.2,108.65,108.56,morning,-4.2,37,0.1,Mixed
+2026-09-10,control,DLTR,2.6,119.59,118.11,morning,-6.0,38,1.2,Mixed
+2026-09-10,control,CTVA,3.8,85.42,84.97,morning,2.5,56,0.5,Mixed
