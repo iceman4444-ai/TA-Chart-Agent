@@ -12,6 +12,19 @@
    "Libby Cantrill"
   ]
  },
+ "guests:43455f2e6bdf54fa": {
+  "date": "2026-09-11",
+  "value": [
+   "Seth Bernstein",
+   "David Kelly",
+   "Tiffany Wilding",
+   "Monica Guerra",
+   "Tani Fukui",
+   "Max Kettner",
+   "Constance Hunter",
+   "Jack Devine"
+  ]
+ },
  "guests:63874a3174783332": {
   "date": "2026-09-10",
   "value": [
@@ -94,6 +107,10 @@
  },
  "ideas:bd5c6939d082a2e8": {
   "date": "2026-09-09",
+  "value": []
+ },
+ "ideas:d708b46cf1692afa": {
+  "date": "2026-09-11",
   "value": []
  }
 }

@@ -313,3 +313,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-11,control,MRNA,4.2,138.43,133.13,morning,52.3,59,3.8,Risk-on,bullish
 2026-09-11,control,SWKS,4.4,87.69,79.28,morning,32.9,83,9.6,Risk-on,bullish
 2026-09-11,control,C,4.3,140.86,136.31,morning,4.5,64,3.2,Risk-on,bullish
+2026-09-11,pick,MSTR,4.5,130.97,125.81,afternoon,22.4,57,3.9,Risk-on,bullish
+2026-09-11,pick,DELL,4.4,567.29,479.37,afternoon,26.4,67,15.5,Risk-on,bullish
+2026-09-11,control,HAL,4.2,35.84,35.69,afternoon,4.9,53,0.4,Risk-on,bullish
+2026-09-11,control,MRVL,4.4,236.10,230.80,afternoon,8.9,55,2.2,Risk-on,bullish
+2026-09-11,control,DE,4.3,675.74,647.11,afternoon,8.5,61,4.2,Risk-on,bullish
