@@ -1562,7 +1562,7 @@ def sample_controls(scored: list, picks: list, ind: dict, count: int = 3) -> lis
 
 LEDGER_FIELDS = [
     "date", "kind", "ticker", "score", "close", "support",
-    "slot", "ext_50", "rsi", "stop_pct", "regime",
+    "slot", "ext_50", "rsi", "stop_pct", "regime", "sentiment",
 ]
 
 
@@ -1602,6 +1602,10 @@ def append_picks_ledger(
             "stop_pct": f"{(close - support) / close * 100:.1f}"
             if support and close else "",
             "regime": regime_label,
+            # Scan picks and controls are bullish by construction; a podcast
+            # setup carries whatever view the speaker actually voiced, and
+            # grading a bearish call as a long would score it backwards.
+            "sentiment": src.get("sentiment") or "bullish",
         }
 
     rows = []
@@ -1859,11 +1863,16 @@ def grade_ledger(cfg: dict) -> list[dict]:
                 "rsi": r.get("rsi") or "",
                 "stop_pct": r.get("stop_pct") or "",
                 "regime": r.get("regime") or "",
+                "sentiment": (r.get("sentiment") or "bullish").lower(),
                 "rets": {},
                 "alphas": {},
                 "stopped": {},
                 "brokes": {},
             }
+            # A bearish call is right when the name falls, so its return is
+            # the short's. The support/stop machinery is long-only, so those
+            # columns are left empty for it rather than reported backwards.
+            short = rec["sentiment"] == "bearish"
             spy_after, spy_entry = None, None
             if spy is not None and (spy.index >= entry_ts).any():
                 spy_after = spy[spy.index >= entry_ts]
@@ -1871,8 +1880,14 @@ def grade_ledger(cfg: dict) -> list[dict]:
             for name, bars in SCORECARD_HORIZONS:
                 if len(tradable) >= bars:
                     window = tradable.iloc[:bars]
-                    ret = float(window["Close"].iloc[-1]) / entry - 1
+                    price_ret = float(window["Close"].iloc[-1]) / entry - 1
+                    ret = -price_ret if short else price_ret
                     rec["rets"][name] = ret
+                    if short:
+                        if spy_after is not None and len(spy_after) >= bars and spy_entry:
+                            spy_ret = float(spy_after["Close"].iloc[bars - 1]) / spy_entry - 1
+                            rec["alphas"][name] = -(price_ret - spy_ret)
+                        continue
 
                     # Whether the stop fired *within this horizon* — the old
                     # flag scanned all history, so a 1-week row reported
@@ -1921,23 +1936,35 @@ def build_scorecard(cfg: dict) -> str | None:
         rets = [g["rets"][horizon] for g in sample]
         alphas = [g["alphas"][horizon] for g in sample if horizon in g["alphas"]]
         stops = [g["stopped"][horizon] for g in sample if horizon in g["stopped"]]
+        breaches = [g["brokes"][horizon] for g in sample if horizon in g["brokes"]]
         hit = sum(1 for x in rets if x > 0) / n * 100
         avg = sum(rets) / n * 100
+        # The mean of a small bucket is hostage to one or two names; the
+        # median says whether the typical idea worked.
+        ordered = sorted(rets)
+        median = (
+            ordered[n // 2] if n % 2
+            else (ordered[n // 2 - 1] + ordered[n // 2]) / 2
+        ) * 100
         alpha = f"{sum(alphas) / len(alphas) * 100:+.1f}%" if alphas else "—"
         stopped = f"{sum(stops) / len(stops) * 100:+.1f}%" if stops else "—"
-        broke = sum(1 for g in sample if g["brokes"].get(horizon)) / n * 100
+        broke = (
+            f"{sum(1 for b in breaches if b) / len(breaches) * 100:.0f}%"
+            if breaches else "—"
+        )
         return (
             f"<tr><td>{label}</td><td>{n}</td><td>{hit:.0f}%</td>"
-            f"<td>{avg:+.1f}%</td><td>{stopped}</td><td>{alpha}</td>"
-            f"<td>{broke:.0f}%</td></tr>"
+            f"<td>{avg:+.1f}%</td><td>{median:+.1f}%</td><td>{stopped}</td>"
+            f"<td>{alpha}</td><td>{broke}</td></tr>"
         )
 
     header = (
         "<table border='1' cellpadding='6' cellspacing='0' "
         "style='border-collapse:collapse;font-size:14px'>"
         "<tr style='background:#eceff1'><th>{first}</th><th>N</th>"
-        "<th>Hit rate</th><th>Avg held</th><th>Avg if stopped out</th>"
-        "<th>Avg vs SPY</th><th>Support broke</th></tr>"
+        "<th>Hit rate</th><th>Avg held</th><th>Median held</th>"
+        "<th>Avg if stopped out</th><th>Avg vs SPY</th>"
+        "<th>Support broke</th></tr>"
     )
     block = (
         "<h3 style='font-family:sans-serif'>Performance Scorecard</h3>"
@@ -1962,14 +1989,21 @@ def build_scorecard(cfg: dict) -> str | None:
     # unemailed control names. This is the comparison the data supports —
     # score buckets alone are confounded, because every emailed pick is a
     # top-of-universe score by construction.
+    def of_kind(kind, sentiment=None):
+        return [
+            g for g in graded
+            if g["kind"] == kind
+            and (sentiment is None or g.get("sentiment", "bullish") == sentiment)
+        ]
+
     sources = [
-        ("Scan picks", "pick"),
-        ("Podcast setups", "setup"),
-        ("Control (not emailed)", "control"),
+        ("Scan picks", of_kind("pick")),
+        ("Podcast setups (bullish)", of_kind("setup", "bullish")),
+        ("Podcast setups (bearish, as shorts)", of_kind("setup", "bearish")),
+        ("Control — ranks 6-30, not emailed", of_kind("control")),
     ]
     source_rows = "".join(
-        horizon_row(label, [g for g in graded if g["kind"] == kind], bucket_h)
-        for label, kind in sources
+        horizon_row(label, items, bucket_h) for label, items in sources
     )
     if source_rows:
         block += (
