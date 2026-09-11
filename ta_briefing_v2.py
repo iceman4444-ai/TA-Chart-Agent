@@ -228,6 +228,91 @@ def detect_trendline(plot_df: pd.DataFrame, kind: str) -> tuple[int, float, floa
     return best
 
 
+def detect_patterns(plot_df: pd.DataFrame) -> list[dict]:
+    """Geometric observations worth a second look, as plain statements.
+
+    Two families: converging trendlines (wedges and triangles), read off the
+    support and resistance lines already fitted to the swing pivots; and a
+    close through a level that previously capped or floored the range. Both
+    are described as what was measured, with the conventional reading
+    attached — they are suggestive shapes, not forecasts.
+    """
+    notes: list[dict] = []
+    n = len(plot_df)
+    if n < 40:
+        return notes
+    last_close = float(plot_df["Close"].iloc[-1])
+
+    # Fit the pivots directly rather than reusing the drawn trendlines: those
+    # are deliberately strict (any poke through disqualifies a line), which
+    # makes them good for display and useless for measuring a converging
+    # range — a textbook wedge yields no line at all.
+    highs, lows = plot_df["High"].to_numpy(), plot_df["Low"].to_numpy()
+    hi_idx, lo_idx = find_pivots(highs, "high"), find_pivots(lows, "low")
+    if len(hi_idx) >= 3 and len(lo_idx) >= 3:
+        top = np.polyfit(hi_idx, highs[hi_idx], 1)
+        bot = np.polyfit(lo_idx, lows[lo_idx], 1)
+        start, end = max(min(hi_idx), min(lo_idx)), n - 1
+        if end - start > 30:              # needs room to judge convergence
+            gap_start = float(np.polyval(top, start) - np.polyval(bot, start))
+            gap_end = float(np.polyval(top, end) - np.polyval(bot, end))
+            # slope across the window as a share of price: "flat" is < ~2%
+            res_pct = float(top[0]) * (end - start) / last_close * 100
+            sup_pct = float(bot[0]) * (end - start) / last_close * 100
+            converging = gap_start > 0 and 0 < gap_end < gap_start * 0.6
+
+            if converging and res_pct > 2 and sup_pct > 2:
+                notes.append({"label": "Rising wedge", "note":
+                    "Rising wedge: both trendlines slope up but the range is "
+                    f"narrowing ({gap_start / last_close * 100:.1f}% to "
+                    f"{gap_end / last_close * 100:.1f}% of price). Buyers are "
+                    "paying up for less ground — conventionally read as a "
+                    "bearish exhaustion pattern, and an inflection either way."
+                })
+            elif converging and res_pct < -2 and sup_pct < -2:
+                notes.append({"label": "Falling wedge", "note":
+                    "Falling wedge: both trendlines slope down into a "
+                    "narrowing range — conventionally a bullish reversal shape, "
+                    "though only a close above the upper line confirms it."
+                })
+            elif converging and abs(res_pct) <= 2 and sup_pct > 2:
+                notes.append({"label": "Ascending triangle", "note":
+                    "Ascending triangle: flat overhead supply with higher lows "
+                    "beneath it — pressure builds against the ceiling."
+                })
+            elif converging and res_pct < -2 and abs(sup_pct) <= 2:
+                notes.append({"label": "Descending triangle", "note":
+                    "Descending triangle: a flat floor with lower highs "
+                    "pressing down on it."
+                })
+
+    # A close through a level that previously held the range, ignoring the
+    # last fortnight so the level is one the market actually respected first.
+    recent = 10
+    prior = plot_df.iloc[:-recent]
+    if len(prior) >= 25:
+        ph, pl = prior["High"].to_numpy(), prior["Low"].to_numpy()
+        hp, lp = find_pivots(ph, "high"), find_pivots(pl, "low")
+        ceiling = float(ph[hp].max()) if len(hp) else float(ph.max())
+        floor_ = float(pl[lp].min()) if len(lp) else float(pl.min())
+        # "recently crossed" = clear of the level now, but under it at some
+        # point in the last month. Comparing only against the bar 10 sessions
+        # back missed breakouts that began just before that bar.
+        window = plot_df["Close"].iloc[-20:]
+        if last_close > ceiling * 1.005 and float(window.min()) < ceiling:
+            notes.append({"label": f"Broke above {ceiling:,.2f}", "note":
+                f"Broke through prior resistance at {ceiling:,.2f} within the "
+                "last two weeks — that level is the first place to watch on a "
+                "pullback, since old resistance often becomes support."
+            })
+        elif last_close < floor_ * 0.995 and float(window.max()) > floor_:
+            notes.append({"label": f"Broke below {floor_:,.2f}", "note":
+                f"Broke down through prior support at {floor_:,.2f} within the "
+                "last two weeks — the level that held is now overhead supply."
+            })
+    return notes
+
+
 def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_dir: Path) -> Path:
     plot_df = df.dropna(subset=[f"SMA{ind['sma_slow']}", "RSI"]).tail(chart_days)
     if plot_df.empty:
@@ -240,8 +325,8 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
         mpf.make_addplot(plot_df[f"SMA{fast}"], panel=0, color="#e07ae0", width=1.0, label=f"SMA {fast}"),
         mpf.make_addplot(plot_df[f"SMA{slow}"], panel=0, color="#ffa726", width=1.0, label=f"SMA {slow}"),
         mpf.make_addplot(plot_df["RSI"], panel=2, color="#b39ddb", width=1.0, ylabel="RSI", ylim=(0, 100)),
-        mpf.make_addplot(flat(70), panel=2, color="#787b86", width=0.7, linestyle="--"),
-        mpf.make_addplot(flat(30), panel=2, color="#787b86", width=0.7, linestyle="--"),
+        mpf.make_addplot(flat(70), panel=2, color="#787b86", width=0.7, linestyle="--", secondary_y=False),
+        mpf.make_addplot(flat(30), panel=2, color="#787b86", width=0.7, linestyle="--", secondary_y=False),
     ]
 
     # Volume against its own average: a breakout on below-average volume is
@@ -249,7 +334,7 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
     vol_avg = plot_df["Volume"].rolling(20).mean()
     if vol_avg.notna().any():
         addplots.append(
-            mpf.make_addplot(vol_avg, panel=1, color="#8892a0", width=1.0)
+            mpf.make_addplot(vol_avg, panel=1, color="#8892a0", width=1.0, secondary_y=False)
         )
 
     # A volatility-based stop drawn next to the moving averages, so the
@@ -261,7 +346,7 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
         addplots.append(
             mpf.make_addplot(
                 flat(atr_stop), panel=0, color="#f6465d", width=1.0,
-                linestyle="--", label="2x ATR stop",
+                linestyle="--", label="2x ATR stop", secondary_y=False,
             )
         )
 
@@ -278,9 +363,9 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
             rs = rs / rs.iloc[0] * 100
             addplots += [
                 mpf.make_addplot(rs, panel=3, color="#4aa8ff", width=1.2,
-                                 ylabel="RS vs SPY"),
+                                 ylabel="RS vs SPY", secondary_y=False),
                 mpf.make_addplot(flat(100), panel=3, color="#787b86",
-                                 width=0.7, linestyle="--"),
+                                 width=0.7, linestyle="--", secondary_y=False),
             ]
     long = ind.get("sma_long")
     if long and f"SMA{long}" in plot_df and plot_df[f"SMA{long}"].notna().any():
@@ -361,6 +446,18 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
             0.995, atr_stop, f"2x ATR  {atr_stop:,.2f}",
             transform=price_ax.get_yaxis_transform(),
             ha="right", va="top", fontsize=7, color="#f6465d",
+        )
+    patterns = detect_patterns(plot_df)
+    if patterns:
+        # First sentence of each note: enough to flag the shape on the chart,
+        # with the full reading carried in the email text.
+        headline = "  •  ".join(p["label"] for p in patterns[:2])
+        price_ax.text(
+            0.012, 0.022, f"⚑ {headline}",
+            transform=price_ax.transAxes, ha="left", va="bottom",
+            fontsize=8, color="#e3b341",
+            bbox=dict(facecolor="#131722", edgecolor="#e3b341",
+                      alpha=0.75, boxstyle="round,pad=0.35"),
         )
     legend = price_ax.legend(loc="upper left", fontsize=8)
     legend.get_frame().set_alpha(0.3)
@@ -2542,6 +2639,11 @@ def llm_commentary(
                 "counter-trend; never suggest adding to a losing position "
                 "(losers average losers); when signals conflict, recommend "
                 "cutting risk rather than rationalizing. Respect "
+                "Where 'chart_patterns' is non-empty, work the observation "
+                "into the commentary as a thing to watch rather than a "
+                "prediction — these are suggestive geometries with mediocre "
+                "hit rates, so hedge them and never let one override the "
+                "levels. Respect "
                 "'market_regime': when it reads Risk-off or Mixed, say so in "
                 "the market summary and temper the individual plans "
                 "accordingly (smaller size, a higher asymmetry bar, or "
@@ -2723,6 +2825,12 @@ def build_html(
             block += (
                 "<p style='max-width:860px;font-size:14px'>"
                 f"<b>{s['sizing']}</b></p>"
+            )
+        for note in s.get("patterns") or []:
+            block += (
+                "<p style='max-width:860px;font-size:14px;color:#8a6d1f;"
+                "background:#fffbe6;padding:6px 10px;border-left:3px solid #e3b341'>"
+                f"⚑ {note['note']}</p>"
             )
         if s.get("options_note"):
             block += (
@@ -3087,6 +3195,9 @@ def main(argv: list[str] | None = None) -> int:
                 summary["repeat"] = repeat_note(
                     signal_history(ledger_rows, ticker), last_close
                 )
+                summary["patterns"] = detect_patterns(
+                    df.dropna(subset=[f"SMA{ind['sma_slow']}", "RSI"]).tail(cfg["chart_days"])
+                )
                 vol = vol_context(ticker, df)
                 summary["vol"] = vol
                 summary["options_note"] = options_note(
@@ -3136,6 +3247,7 @@ def main(argv: list[str] | None = None) -> int:
                 "resistance_level": s.get("resistance"),
                 "reward_risk": s.get("rr"),
                 "below_200day": s.get("below_200"),
+                "chart_patterns": [p["note"] for p in (s.get("patterns") or [])],
                 "signal_age": s.get("repeat"),
                 "volatility": s.get("vol"),
                 "days_to_earnings": s.get("earnings_days"),
