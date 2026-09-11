@@ -128,7 +128,31 @@ def add_indicators(df: pd.DataFrame, ind: dict) -> pd.DataFrame:
     df["MACD"] = ema_fast - ema_slow
     df["MACDSignal"] = df["MACD"].ewm(span=ind["macd_signal"], adjust=False).mean()
     df["MACDHist"] = df["MACD"] - df["MACDSignal"]
+
+    # Average true range, for a stop sized to the name's own volatility
+    # rather than to whichever moving average happens to sit nearest.
+    prev_close = close.shift(1)
+    true_range = pd.concat([
+        df["High"] - df["Low"],
+        (df["High"] - prev_close).abs(),
+        (df["Low"] - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    df["ATR"] = true_range.ewm(alpha=1 / 14, min_periods=14, adjust=False).mean()
     return df
+
+
+_SPY_CACHE: dict[str, pd.DataFrame] = {}
+
+
+def spy_history(lookback_days: int = 400) -> pd.DataFrame | None:
+    """SPY closes, fetched once per run, for relative-strength plotting."""
+    if "spy" not in _SPY_CACHE:
+        try:
+            _SPY_CACHE["spy"] = fetch_history("SPY", lookback_days)
+        except Exception as exc:
+            log(f"relative strength: SPY unavailable — {exc}")
+            _SPY_CACHE["spy"] = None
+    return _SPY_CACHE["spy"]
 
 
 FIB_RATIOS = (0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0)
@@ -210,19 +234,54 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
         raise RuntimeError(f"{ticker}: not enough history to plot (increase lookback_days)")
 
     fast, slow = ind["sma_fast"], ind["sma_slow"]
-    hist_colors = ["#2ebd85" if v >= 0 else "#f6465d" for v in plot_df["MACDHist"]]
-    rsi_band = lambda level: pd.Series(level, index=plot_df.index)
+    flat = lambda level: pd.Series(level, index=plot_df.index)
 
     addplots = [
         mpf.make_addplot(plot_df[f"SMA{fast}"], panel=0, color="#e07ae0", width=1.0, label=f"SMA {fast}"),
         mpf.make_addplot(plot_df[f"SMA{slow}"], panel=0, color="#ffa726", width=1.0, label=f"SMA {slow}"),
         mpf.make_addplot(plot_df["RSI"], panel=2, color="#b39ddb", width=1.0, ylabel="RSI", ylim=(0, 100)),
-        mpf.make_addplot(rsi_band(70), panel=2, color="#787b86", width=0.7, linestyle="--"),
-        mpf.make_addplot(rsi_band(30), panel=2, color="#787b86", width=0.7, linestyle="--"),
-        mpf.make_addplot(plot_df["MACD"], panel=3, color="#42a5f5", width=1.0, ylabel="MACD"),
-        mpf.make_addplot(plot_df["MACDSignal"], panel=3, color="#ffa726", width=1.0),
-        mpf.make_addplot(plot_df["MACDHist"], panel=3, type="bar", color=hist_colors, alpha=0.6),
+        mpf.make_addplot(flat(70), panel=2, color="#787b86", width=0.7, linestyle="--"),
+        mpf.make_addplot(flat(30), panel=2, color="#787b86", width=0.7, linestyle="--"),
     ]
+
+    # Volume against its own average: a breakout on below-average volume is
+    # a different animal from one the whole market turned up for.
+    vol_avg = plot_df["Volume"].rolling(20).mean()
+    if vol_avg.notna().any():
+        addplots.append(
+            mpf.make_addplot(vol_avg, panel=1, color="#8892a0", width=1.0)
+        )
+
+    # A volatility-based stop drawn next to the moving averages, so the
+    # difference between a noise-level stop and a real one is visible.
+    atr = plot_df["ATR"].iloc[-1] if "ATR" in plot_df else None
+    atr_stop = None
+    if atr is not None and pd.notna(atr):
+        atr_stop = float(plot_df["Close"].iloc[-1]) - 2 * float(atr)
+        addplots.append(
+            mpf.make_addplot(
+                flat(atr_stop), panel=0, color="#f6465d", width=1.0,
+                linestyle="--", label="2x ATR stop",
+            )
+        )
+
+    # Relative strength: the ratio to SPY, rebased to 100 at the left edge.
+    # Rising means the name is genuinely leading; flat while price climbs
+    # means you are being paid for beta, not for the pick.
+    has_rs = False
+    spy = spy_history()
+    if spy is not None and not spy.empty:
+        aligned = spy["Close"].reindex(plot_df.index).ffill()
+        if aligned.notna().all() and aligned.iloc[0] > 0:
+            has_rs = True
+            rs = (plot_df["Close"] / aligned)
+            rs = rs / rs.iloc[0] * 100
+            addplots += [
+                mpf.make_addplot(rs, panel=3, color="#4aa8ff", width=1.2,
+                                 ylabel="RS vs SPY"),
+                mpf.make_addplot(flat(100), panel=3, color="#787b86",
+                                 width=0.7, linestyle="--"),
+            ]
     long = ind.get("sma_long")
     if long and f"SMA{long}" in plot_df and plot_df[f"SMA{long}"].notna().any():
         addplots.insert(
@@ -283,8 +342,8 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
         style=style,
         volume=True,
         addplot=addplots,
-        panel_ratios=(6, 2, 2, 2),
-        figsize=(12, 10),
+        panel_ratios=(6, 2, 2, 2) if has_rs else (6, 2, 2),
+        figsize=(12, 10) if has_rs else (12, 8),
         title=title,
         tight_layout=True,
         returnfig=True,
@@ -296,6 +355,12 @@ def render_chart(ticker: str, df: pd.DataFrame, ind: dict, chart_days: int, out_
             0.995, level, f"{ratio:.1%}  {level:,.2f}",
             transform=price_ax.get_yaxis_transform(),
             ha="right", va="bottom", fontsize=7, color="#e3b341",
+        )
+    if atr_stop:
+        price_ax.text(
+            0.995, atr_stop, f"2x ATR  {atr_stop:,.2f}",
+            transform=price_ax.get_yaxis_transform(),
+            ha="right", va="top", fontsize=7, color="#f6465d",
         )
     legend = price_ax.legend(loc="upper left", fontsize=8)
     legend.get_frame().set_alpha(0.3)
