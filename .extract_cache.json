@@ -25,6 +25,19 @@
    "Jack Devine"
   ]
  },
+ "guests:5c00fdf622c120e4": {
+  "date": "2026-09-14",
+  "value": [
+   "Greg Brockman",
+   "Robert Friedland",
+   "Christopher Wright",
+   "Seth Bernstein",
+   "Dan Ives",
+   "Lori Calvasina",
+   "Jennifer Huddleston",
+   "David Tinsley"
+  ]
+ },
  "guests:63874a3174783332": {
   "date": "2026-09-10",
   "value": [
@@ -140,5 +153,25 @@
  "ideas:d708b46cf1692afa": {
   "date": "2026-09-11",
   "value": []
+ },
+ "ideas:e05d8d30817fc656": {
+  "date": "2026-09-14",
+  "value": [
+   {
+    "sentiment": "neutral",
+    "thesis": "Prof G Markets discusses iPhone Duo and Apple's transition as John Ternus takes over from Tim Cook, raising questions about product strategy and leadership impact.",
+    "ticker": "AAPL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Robert Friedland, Executive Co-Chairman of Ivanhoe Mines, warns of a monumental shortage of copper driven by data centers, electric cars, and reindustrialization, with copper prices surging 15% this year on Odd Lots.",
+    "ticker": "IVN"
+   },
+   {
+    "sentiment": "bearish",
+    "thesis": "All-In Podcast reports Nike was removed from S&P 100 after stock tanked 80%, representing a $200B collapse.",
+    "ticker": "NKE"
+   }
+  ]
  }
 }
