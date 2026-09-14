@@ -38,6 +38,19 @@
    "Inigo Fraser Jenkins"
   ]
  },
+ "guests:8ab069e75264509b": {
+  "date": "2026-09-14",
+  "value": [
+   "Greg Brockman",
+   "Robert Friedland",
+   "Christopher Wright",
+   "Dan Ives",
+   "Lori Calvasina",
+   "David Tinsley",
+   "Naomi Fink",
+   "Seth Bernstein"
+  ]
+ },
  "guests:bd5c6939d082a2e8": {
   "date": "2026-09-09",
   "value": [
@@ -83,6 +96,21 @@
     "sentiment": "neutral",
     "thesis": "Scott Glenn, VP of Asset Protection at Home Depot, discusses the company's response to organized retail crime and shoplifting challenges affecting retail operations and inventory management.",
     "ticker": "HD"
+   }
+  ]
+ },
+ "ideas:3955ac8be833ef17": {
+  "date": "2026-09-14",
+  "value": [
+   {
+    "sentiment": "bearish",
+    "thesis": "Nike removed from S&P 100 after stock tanks 80%, representing a major corporate collapse on All-In with Chamath, Jason, Sacks & Friedberg.",
+    "ticker": "NKE"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Prof G Markets discusses iPhone Duo and what's next for Apple as John Ternus takes over from Tim Cook, indicating transition uncertainty.",
+    "ticker": "AAPL"
    }
   ]
  },

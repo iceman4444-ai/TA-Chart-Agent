@@ -318,3 +318,13 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-11,control,HAL,4.2,35.84,35.69,afternoon,4.9,53,0.4,Risk-on,bullish
 2026-09-11,control,MRVL,4.4,236.10,230.80,afternoon,8.9,55,2.2,Risk-on,bullish
 2026-09-11,control,DE,4.3,675.74,647.11,afternoon,8.5,61,4.2,Risk-on,bullish
+2026-09-14,pick,HOOD,4.5,113.93,110.68,morning,10.1,57,2.9,Risk-on,bullish
+2026-09-14,pick,BBY,4.5,94.08,86.88,morning,10.3,65,7.7,Risk-on,bullish
+2026-09-14,pick,CDW,4.5,151.23,143.92,morning,7.7,57,4.8,Risk-on,bullish
+2026-09-14,pick,DVN,4.5,50.11,48.48,morning,9.8,66,3.3,Risk-on,bullish
+2026-09-14,pick,ELV,4.4,423.86,401.68,morning,7.1,64,5.2,Risk-on,bullish
+2026-09-14,setup,NKE,1.8,37.12,36.55,morning,-8.7,38,1.5,Risk-on,bearish
+2026-09-14,setup,AAPL,4.0,334.10,320.32,morning,4.9,64,4.1,Risk-on,neutral
+2026-09-14,control,XOM,4.4,165.57,162.60,morning,6.7,61,1.8,Risk-on,bullish
+2026-09-14,control,SWKS,4.4,79.47,76.71,morning,19.8,62,3.5,Risk-on,bullish
+2026-09-14,control,HPQ,4.4,34.11,31.67,morning,21.6,64,7.2,Risk-on,bullish
