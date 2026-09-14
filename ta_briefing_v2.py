@@ -604,6 +604,73 @@ SECTOR_ETFS = {
 }
 
 
+def macro_backdrop() -> dict:
+    """Rates, the dollar, gold and credit — the backdrop equities trade in.
+
+    Sector rotation and breadth are equity-internal; a global-macro reading
+    wants to know what bonds, the currency and credit are doing before
+    judging a stock signal. Rates are quoted as a level and a move in basis
+    points, and credit as the HYG/LQD ratio, which falls when high-yield
+    underperforms investment grade — the classic risk-off tell.
+    """
+    out: dict[str, dict] = {}
+    closes: dict[str, pd.Series] = {}
+    for sym in ("^TNX", "UUP", "GLD", "HYG", "LQD"):
+        try:
+            closes[sym] = fetch_history(sym, 90)["Close"]
+        except Exception as exc:
+            log(f"macro: {sym} unavailable — {exc}")
+
+    def move(series, days):
+        return (series.iloc[-1] / series.iloc[-1 - days] - 1) * 100 if len(series) > days else None
+
+    if "^TNX" in closes:
+        c = closes["^TNX"]
+        # ^TNX quotes the 10-year yield times ten (42.5 == 4.25%).
+        level = float(c.iloc[-1]) / 10
+        prev = float(c.iloc[-2]) / 10 if len(c) > 1 else level
+        month = float(c.iloc[-22]) / 10 if len(c) > 22 else None
+        out["rates"] = {
+            "name": "US 10-year yield",
+            "level": f"{level:.2f}%",
+            "day_bp": round((level - prev) * 100),
+            "month_bp": round((level - month) * 100) if month else None,
+        }
+    for sym, name in (("UUP", "US dollar"), ("GLD", "Gold")):
+        if sym in closes:
+            out[name.split()[-1].lower()] = {
+                "name": name,
+                "day_pct": round(move(closes[sym], 1), 2),
+                "month_pct": (lambda m: round(m, 2) if m is not None else None)(
+                    move(closes[sym], 21)
+                ),
+            }
+    if "HYG" in closes and "LQD" in closes:
+        ratio = (closes["HYG"] / closes["LQD"]).dropna()
+        if len(ratio) > 22:
+            out["credit"] = {
+                "name": "Credit (HYG/LQD)",
+                "day_pct": round((ratio.iloc[-1] / ratio.iloc[-2] - 1) * 100, 2),
+                "month_pct": round((ratio.iloc[-1] / ratio.iloc[-22] - 1) * 100, 2),
+                "reading": (
+                    "spreads widening — high yield lagging investment grade"
+                    if ratio.iloc[-1] < ratio.iloc[-22] else
+                    "spreads firm — high yield keeping pace"
+                ),
+            }
+    if out:
+        bits = []
+        if "rates" in out:
+            bits.append(f"10y {out['rates']['level']} ({out['rates']['day_bp']:+d}bp)")
+        for k in ("dollar", "gold"):
+            if k in out:
+                bits.append(f"{out[k]['name']} {out[k]['day_pct']:+.2f}%")
+        if "credit" in out:
+            bits.append(f"credit {out['credit']['day_pct']:+.2f}%")
+        log("macro: " + ", ".join(bits))
+    return out
+
+
 def market_overview() -> dict:
     """Daily and 1-month moves for SPY, QQQ, and the S&P sector ETFs."""
     stats, frames = {}, {}
@@ -2650,6 +2717,11 @@ def llm_commentary(
                 "standing aside) instead of writing every setup as if the "
                 "tape were supportive. Use the volatility "
                 "data (realized HV vs ATM IV) and the VIX in market_stats to "
+                "Read the equity signal against 'macro_backdrop' — rising "
+                "yields, a bid dollar and widening credit spreads are a "
+                "different backdrop for a momentum long than the reverse, and "
+                "the market summary should say which one it is. "
+                "Use the volatility data to "
                 "set options context: rich IV favors defined-risk premium "
                 "selling, cheap IV favors long calls or debit spreads — "
                 "always defined-risk, never naked. The volatility data may "
@@ -2855,6 +2927,25 @@ def build_html(
         block = "<h3 style='font-family:sans-serif'>Market Summary — SPY &amp; QQQ</h3>"
         if market.get("text"):
             block += f"<p style='max-width:860px;font-size:14px'>{market['text']}</p>"
+        macro = market.get("macro") or {}
+        if macro:
+            cells = []
+            if "rates" in macro:
+                r = macro["rates"]
+                cells.append(f"10-year {r['level']} <span style='color:#777'>"
+                             f"({r['day_bp']:+d}bp today)</span>")
+            for key in ("dollar", "gold"):
+                if key in macro:
+                    m = macro[key]
+                    cells.append(f"{m['name']} {m['day_pct']:+.2f}%")
+            if "credit" in macro:
+                c = macro["credit"]
+                cells.append(f"{c['name']} {c['day_pct']:+.2f}% <span style='color:#777'>"
+                             f"— {c['reading']}</span>")
+            block += (
+                "<p style='max-width:860px;font-size:14px'><b>Macro backdrop:</b> "
+                + " &nbsp;·&nbsp; ".join(cells) + "</p>"
+            )
         if market.get("cid"):
             block += f"<img src='cid:{market['cid']}' width='860' style='max-width:100%'/>"
         sections.append(block)
@@ -3003,7 +3094,7 @@ def build_email(
     cids = {t: make_msgid(domain="ta-chart-agent")[1:-1] for t in chart_paths}
     market_html = None
     if market:
-        market_html = {"text": market.get("text", "")}
+        market_html = {"text": market.get("text", ""), "macro": market.get("macro")}
         if market.get("path"):
             market_html["cid"] = make_msgid(domain="ta-chart-agent")[1:-1]
     generated = f"{datetime.now(EASTERN):%Y-%m-%d %H:%M %Z}"
@@ -3221,6 +3312,7 @@ def main(argv: list[str] | None = None) -> int:
     scorecard = None
     regime = None
     if args.scan:
+        macro = macro_backdrop()
         regime = market_regime(cfg, ind, breadth)
         log(
             f"regime: {regime['label']} (score {regime['score']}"
@@ -3335,7 +3427,7 @@ def main(argv: list[str] | None = None) -> int:
         llm_result = llm_commentary(
             picks_context,
             research_notes,
-            overview["stats"],
+            {**overview["stats"], "macro_backdrop": macro},
             podcast_notes,
             [{k: v for k, v in st.items() if k != "plan"} for st in podcast_setups],
             tweets or {"watched_accounts": x_posts},
@@ -3368,8 +3460,8 @@ def main(argv: list[str] | None = None) -> int:
                     st["analysis"] = item.get("analysis", "")
                     if item.get("plan"):
                         st["plan"] = item["plan"]
-        if market_text or market_path:
-            market = {"text": market_text, "path": market_path}
+        if market_text or market_path or macro:
+            market = {"text": market_text, "path": market_path, "macro": macro}
 
         # Weekly Scorecard: Friday afternoon recaps grade the ledger.
         now_et = datetime.now(EASTERN)
