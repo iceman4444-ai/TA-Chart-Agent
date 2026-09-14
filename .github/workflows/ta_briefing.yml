@@ -18,14 +18,24 @@ on:
     # Each is set ~7 minutes before the target because the run itself takes
     # about that long, so the mail lands on the hour rather than after it.
     #
-    # Morning recap — mail at ~9:00am EDT (~8:00am EST) + retries
+    # Morning recap — first chance ~9:00am EDT, then hourly catch-ups. The
+    # guard sends only what is still owed, so extra firings are free.
     - cron: "53 12 * * 1-5"
     - cron: "53 13 * * 1-5"
     - cron: "53 14 * * 1-5"
-    # Afternoon recap — mail at ~5:30pm EDT (~4:30pm EST), after the close
+    - cron: "53 15 * * 1-5"
+    - cron: "53 16 * * 1-5"
+    - cron: "53 17 * * 1-5"
+    - cron: "53 18 * * 1-5"
+    - cron: "53 19 * * 1-5"
+    # Afternoon recap — first chance ~5:25pm EDT, after the close, then
+    # catch-ups through the evening.
     - cron: "23 21 * * 1-5"
     - cron: "23 22 * * 1-5"
     - cron: "23 23 * * 1-5"
+    - cron: "23 0 * * 2-6"
+    - cron: "23 1 * * 2-6"
+    - cron: "23 2 * * 2-6"
   workflow_dispatch:
     inputs:
       mode:
@@ -78,23 +88,35 @@ jobs:
           elif [ "$event" = "push" ]; then
             go=true
           else
-            # Scheduled run: take the slot from WHICH cron fired, not from the
-            # hour it actually ran. GitHub routinely delays scheduled runs by
-            # hours — observed ~4h — which previously pushed the morning crons
-            # past the morning window and silently killed the 9am recap for
-            # days. The cron expression states the intent and cannot drift;
-            # the .last-send marker still guarantees one send per slot per day.
-            case "${{ github.event.schedule }}" in
-              "53 12 "*|"53 13 "*|"53 14 "*) slot=morning ;;
-              "23 21 "*|"23 22 "*|"23 23 "*) slot=afternoon ;;
-              *) slot="" ;;
-            esac
-            echo "Cron '${{ github.event.schedule }}' -> $slot slot (now ${hour}:xx ET)"
+            # Scheduled run: reconcile rather than keep an appointment. Tying
+            # a send to a particular cron means a dispatch GitHub drops — it
+            # has delayed these by hours and, on 2026-09-14, fired none at all
+            # — is simply lost. Instead every firing asks the same question:
+            # which of today's slots is still owed? Any single cron landing at
+            # any point in the day repairs the state, and .last-send still
+            # guarantees one send per slot.
+            minutes=$((10#$hour * 60 + 10#$(TZ=America/New_York date +%M)))
+            dow=$(TZ=America/New_York date +%u)
+            have_morning=false; have_afternoon=false
+            grep -qx "$today morning" .last-send 2>/dev/null && have_morning=true
+            grep -qx "$today afternoon" .last-send 2>/dev/null && have_afternoon=true
+            slot=""
+            if [ "$dow" -gt 5 ]; then
+              echo "Skipping: weekend."
+            elif [ "$minutes" -ge 970 ] && [ "$have_afternoon" = false ]; then
+              # 16:10 ET or later: the session has closed, so the afternoon
+              # recap is due and supersedes an unsent morning one.
+              slot=afternoon
+            elif [ "$minutes" -ge 480 ] && [ "$have_morning" = false ]; then
+              # 08:00 ET or later. Runs before the close drop the in-progress
+              # bar, so a catch-up at 11:00 reads the same completed history
+              # the 09:00 send would have.
+              slot=morning
+            fi
             if [ -z "$slot" ]; then
-              echo "Skipping: unrecognised cron schedule."
-            elif grep -qx "$today $slot" .last-send 2>/dev/null; then
-              echo "Skipping: $slot recap already sent today."
+              echo "Nothing owed (morning sent: $have_morning, afternoon sent: $have_afternoon, now ${hour}:xx ET)."
             else
+              echo "Owed: $slot recap (now ${hour}:xx ET) — sending."
               go=true
             fi
           fi

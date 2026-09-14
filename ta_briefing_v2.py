@@ -106,6 +106,15 @@ def fetch_history(ticker: str, lookback_days: int) -> pd.DataFrame:
         raise RuntimeError(f"no price data returned for {ticker}")
     df = df[["Open", "High", "Low", "Close", "Volume"]].dropna()
     df.index = df.index.tz_localize(None)
+
+    # Drop the session still in progress. During market hours the daily bar
+    # for today is partial, and treating it as a close puts an intraday
+    # price into every indicator, the recorded entry and the ledger. Cutting
+    # it means a run at any hour sees the same completed history a pre-open
+    # run would, which is what lets a late catch-up send stay correct.
+    now = datetime.now(EASTERN)
+    if len(df) > 1 and df.index[-1].date() == now.date() and (now.hour, now.minute) < (16, 10):
+        df = df.iloc[:-1]
     return df
 
 
