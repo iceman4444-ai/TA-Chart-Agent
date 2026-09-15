@@ -1,4 +1,17 @@
 {
+ "guests:21833400a0548c76": {
+  "date": "2026-09-15",
+  "value": [
+   "Satya Nadella",
+   "Elon Musk",
+   "Gwynne Shotwell",
+   "Greg Brockman",
+   "George Noble",
+   "Dominic Konstam",
+   "Marina Zavolock",
+   "Sinjin Bowron"
+  ]
+ },
  "guests:2acf71cbda3c6aca": {
   "date": "2026-09-10",
   "value": [
@@ -188,6 +201,36 @@
     "sentiment": "bearish",
     "thesis": "All-In Podcast reports Nike was removed from S&P 100 after stock tanked 80%, representing a $200B collapse.",
     "ticker": "NKE"
+   }
+  ]
+ },
+ "ideas:ea88bca4fd6f5f22": {
+  "date": "2026-09-15",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Satya Nadella discussed Microsoft's master plan for AI and capital allocation strategy on All-In Podcast, indicating the company is strategically positioned in AI infrastructure and development.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Oracle was highlighted as a partner connecting data, applications, and infrastructure for AI business outcomes on the All-In Podcast, suggesting involvement in enterprise AI solutions.",
+    "ticker": "ORCL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meta was mentioned as a partner focused on AI tools and distributing technology benefits on the All-In Podcast, indicating continued AI investment and development.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Elon Musk discussed potential merger with SpaceX and future AI/autonomous capabilities on All-In Podcast, suggesting bullish outlook on Tesla's technology roadmap.",
+    "ticker": "TSLA"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Prof G Markets discussed Apple's iPhone Duo launch and leadership transition with John Ternus taking over from Tim Cook, suggesting potential product innovation ahead.",
+    "ticker": "AAPL"
    }
   ]
  }

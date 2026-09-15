@@ -340,3 +340,12 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-15,control,CNC,4.3,69.41,65.58,morning,5.9,61,5.5,Mixed,bullish
 2026-09-15,control,VRSN,4.4,298.60,287.26,morning,5.9,61,3.8,Mixed,bullish
 2026-09-15,control,DELL,4.2,534.28,481.55,morning,18.3,59,9.9,Mixed,bullish
+2026-09-15,pick,CRWD,4.6,242.49,209.86,afternoon,18.7,65,13.5,Mixed,bullish
+2026-09-15,pick,FTNT,4.5,172.37,159.46,afternoon,8.1,61,7.5,Mixed,bullish
+2026-09-15,pick,GDDY,4.5,102.38,99.60,afternoon,7.9,57,2.7,Mixed,bullish
+2026-09-15,setup,MSFT,3.6,497.12,495.68,afternoon,8.6,56,0.3,Mixed,bullish
+2026-09-15,setup,ORCL,2.4,140.35,139.72,afternoon,-0.2,43,0.4,Mixed,bullish
+2026-09-15,setup,META,3.9,670.24,657.53,afternoon,11.0,72,1.9,Mixed,bullish
+2026-09-15,control,APA,4.4,47.41,43.66,afternoon,20.7,72,7.9,Mixed,bullish
+2026-09-15,control,SWKS,4.5,90.00,82.67,afternoon,34.6,71,8.1,Mixed,bullish
+2026-09-15,control,AMT,4.3,177.71,177.14,afternoon,3.2,55,0.3,Mixed,bullish
