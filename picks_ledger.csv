@@ -332,3 +332,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-14,control,MOS,4.4,25.06,24.23,afternoon,9.2,58,3.3,Mixed,bullish
 2026-09-14,control,CNC,4.3,69.41,65.58,afternoon,5.9,61,5.5,Mixed,bullish
 2026-09-14,control,OXY,4.4,61.78,60.24,afternoon,8.2,65,2.5,Mixed,bullish
+2026-09-15,pick,HOOD,4.5,114.33,110.68,morning,10.5,57,3.2,Mixed,bullish
+2026-09-15,pick,BBY,4.5,94.83,86.92,morning,11.2,66,8.3,Mixed,bullish
+2026-09-15,pick,CDW,4.5,151.70,143.95,morning,8.0,58,5.1,Mixed,bullish
+2026-09-15,pick,ELV,4.4,424.24,401.70,morning,7.2,64,5.3,Mixed,bullish
+2026-09-15,pick,HPQ,4.4,34.02,31.67,morning,21.3,64,6.9,Mixed,bullish
+2026-09-15,control,CNC,4.3,69.41,65.58,morning,5.9,61,5.5,Mixed,bullish
+2026-09-15,control,VRSN,4.4,298.60,287.26,morning,5.9,61,3.8,Mixed,bullish
+2026-09-15,control,DELL,4.2,534.28,481.55,morning,18.3,59,9.9,Mixed,bullish

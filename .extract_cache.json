@@ -84,6 +84,19 @@
    "Dan Chung"
   ]
  },
+ "guests:c16b64d6518fbf58": {
+  "date": "2026-09-15",
+  "value": [
+   "George Noble",
+   "Dominic Konstam",
+   "Marina Zavolock",
+   "Sinjin Bowron",
+   "Gwynne Shotwell",
+   "Elon Musk",
+   "Jensen Huang",
+   "Greg Brockman"
+  ]
+ },
  "guests:df2d4fdae9de2e09": {
   "date": "2026-09-11",
   "value": [
@@ -148,6 +161,10 @@
  },
  "ideas:bd5c6939d082a2e8": {
   "date": "2026-09-09",
+  "value": []
+ },
+ "ideas:c16b64d6518fbf58": {
+  "date": "2026-09-15",
   "value": []
  },
  "ideas:d708b46cf1692afa": {
