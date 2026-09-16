@@ -349,3 +349,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-15,control,APA,4.4,47.41,43.66,afternoon,20.7,72,7.9,Mixed,bullish
 2026-09-15,control,SWKS,4.5,90.00,82.67,afternoon,34.6,71,8.1,Mixed,bullish
 2026-09-15,control,AMT,4.3,177.71,177.14,afternoon,3.2,55,0.3,Mixed,bullish
+2026-09-16,pick,CDW,4.6,153.74,144.90,morning,9.1,59,5.8,Mixed,bullish
+2026-09-16,pick,CRWD,4.6,242.49,209.86,morning,18.7,65,13.5,Mixed,bullish
+2026-09-16,pick,BBY,4.5,93.24,87.31,morning,8.9,62,6.4,Mixed,bullish
+2026-09-16,pick,FTNT,4.5,172.37,159.46,morning,8.1,61,7.5,Mixed,bullish
+2026-09-16,pick,GDDY,4.5,102.38,99.60,morning,7.9,57,2.7,Mixed,bullish
+2026-09-16,setup,NVDA,2.6,212.17,208.46,morning,-0.4,45,1.8,Mixed,bearish
+2026-09-16,setup,AAPL,4.2,331.34,320.32,morning,4.0,61,3.3,Mixed,bullish
+2026-09-16,setup,MSFT,3.6,497.12,495.68,morning,8.6,56,0.3,Mixed,bullish
+2026-09-16,control,VRSN,4.5,297.26,288.52,morning,5.1,59,2.9,Mixed,bullish
+2026-09-16,control,RVTY,4.5,140.19,126.33,morning,18.6,71,9.9,Mixed,bullish
+2026-09-16,control,ADM,4.2,86.61,83.03,morning,5.9,64,4.1,Mixed,bullish

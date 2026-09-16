@@ -123,6 +123,19 @@
    "Scott Glenn"
   ]
  },
+ "guests:e0698fc1a6bbd858": {
+  "date": "2026-09-16",
+  "value": [
+   "Jensen Huang",
+   "Gwynne Shotwell",
+   "Elon Musk",
+   "Tom Boger",
+   "Kaiann Drance",
+   "Sri Santhanam",
+   "Andrew Feldman",
+   "Noam Brown"
+  ]
+ },
  "ideas:2acf71cbda3c6aca": {
   "date": "2026-09-10",
   "value": [
@@ -231,6 +244,31 @@
     "sentiment": "neutral",
     "thesis": "Prof G Markets discussed Apple's iPhone Duo launch and leadership transition with John Ternus taking over from Tim Cook, suggesting potential product innovation ahead.",
     "ticker": "AAPL"
+   }
+  ]
+ },
+ "ideas:f2d5b11c346a61fa": {
+  "date": "2026-09-16",
+  "value": [
+   {
+    "sentiment": "bearish",
+    "thesis": "Jay Goldberg, Senior Analyst at Seaport Group on Bloomberg Surveillance, maintains a continue 'sell' recommendation on Nvidia amid AI anxiety concerns.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Jensen Huang, NVIDIA founder and CEO on All-In podcast, rebutted the 'pace-the-frontier' essay and discussed NVIDIA's capital allocation strategy and closed vs. open model competition.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Apple's Tom Boger, Kaiann Drance and Sri Santhanam on The Circuit discussed the benefits of vertically integrated approach and transition to 2-nanometer process technology for A20 Pro and M-series chips.",
+    "ticker": "AAPL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Satya Nadella on All-In podcast discussed Microsoft's master plan for AI and capital allocation strategy in the context of AI industry trends.",
+    "ticker": "MSFT"
    }
   ]
  }
