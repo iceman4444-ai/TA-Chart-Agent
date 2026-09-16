@@ -360,3 +360,10 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-16,control,VRSN,4.5,297.26,288.52,morning,5.1,59,2.9,Mixed,bullish
 2026-09-16,control,RVTY,4.5,140.19,126.33,morning,18.6,71,9.9,Mixed,bullish
 2026-09-16,control,ADM,4.2,86.61,83.03,morning,5.9,64,4.1,Mixed,bullish
+2026-09-16,pick,ARE,4.7,53.52,52.10,afternoon,5.8,59,2.7,Mixed,bullish
+2026-09-16,pick,RVTY,4.7,145.73,131.84,afternoon,22.6,74,9.5,Mixed,bullish
+2026-09-16,pick,SWKS,4.7,85.59,82.67,afternoon,27.0,64,3.4,Mixed,bullish
+2026-09-16,pick,DELL,4.5,563.29,489.46,afternoon,23.2,63,13.1,Mixed,bullish
+2026-09-16,control,QCOM,4.4,184.84,173.09,afternoon,10.0,66,6.4,Mixed,bullish
+2026-09-16,control,TMO,4.5,648.43,619.44,afternoon,10.8,69,4.5,Mixed,bullish
+2026-09-16,control,PFG,4.1,116.64,113.05,afternoon,3.8,58,3.1,Mixed,bullish

@@ -1,4 +1,29 @@
 {
+ "guests:0e1c7aa1c2b7d3d8": {
+  "date": "2026-09-16",
+  "value": [
+   "Jensen Huang",
+   "Gwynne Shotwell",
+   "Elon Musk",
+   "Tom Boger",
+   "Kaiann Drance",
+   "Sri Santhanam",
+   "Andrew Feldman",
+   "Noam Brown",
+   "Dan Niles",
+   "Michael Monahan",
+   "Gina Martin Adams",
+   "Stuart Russell",
+   "Jim Zelter",
+   "Steve Nison",
+   "Dean Curnutt",
+   "Ed Zitron",
+   "Mark Zandi",
+   "Michael Moritz",
+   "JD Vance",
+   "Satya Nadella"
+  ]
+ },
  "guests:21833400a0548c76": {
   "date": "2026-09-15",
   "value": [
@@ -269,6 +294,36 @@
     "sentiment": "bullish",
     "thesis": "Satya Nadella on All-In podcast discussed Microsoft's master plan for AI and capital allocation strategy in the context of AI industry trends.",
     "ticker": "MSFT"
+   }
+  ]
+ },
+ "ideas:facd8cb4240dbc5a": {
+  "date": "2026-09-16",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Jensen Huang on All-In discussed NVIDIA's capital allocation strategy and position in AI infrastructure, positioning the company as central to the AI build-out.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Apple's Tom Boger, Kaiann Drance and Sri Santhanam on The Circuit discussed the A20 Pro and M-series jump to 2-nanometer process technology and vertical integration benefits for AI capabilities.",
+    "ticker": "AAPL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Satya Nadella on All-In outlined Microsoft's master plan for AI capital allocation and positioning for AI dominance.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access founder-led companies similar to Peter Thiel's Founders Fund strategy.",
+    "ticker": "FFF"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Andrew Feldman on Uncapped discussed Cerebras' wafer-scale architecture as a fundamentally different approach to challenge NVIDIA with customers including OpenAI and the US government.",
+    "ticker": "CEREBRAS"
    }
   ]
  }
