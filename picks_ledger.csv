@@ -378,3 +378,9 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-17,control,TRV,4.3,378.92,368.60,morning,3.2,62,2.7,Mixed,bullish
 2026-09-17,control,QCOM,4.4,184.84,173.09,morning,10.0,66,6.4,Mixed,bullish
 2026-09-17,control,UHS,4.1,181.21,179.29,morning,9.0,65,1.1,Mixed,bullish
+2026-09-17,pick,FTNT,4.6,172.58,161.14,afternoon,7.8,61,6.6,Risk-on,bullish
+2026-09-17,setup,NVDA,3.5,219.34,218.98,afternoon,2.7,52,0.2,Risk-on,bullish
+2026-09-17,setup,META,4.4,682.31,657.53,afternoon,12.5,74,3.6,Risk-on,bullish
+2026-09-17,control,MRVL,4.3,240.76,230.80,afternoon,11.5,57,4.1,Risk-on,bullish
+2026-09-17,control,HPQ,4.4,34.66,31.67,afternoon,20.8,64,8.6,Risk-on,bullish
+2026-09-17,control,BBY,4.1,94.56,87.83,afternoon,9.7,64,7.1,Risk-on,bullish

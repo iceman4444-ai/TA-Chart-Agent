@@ -63,6 +63,19 @@
    "Jack Devine"
   ]
  },
+ "guests:485ddc516a1361a8": {
+  "date": "2026-09-17",
+  "value": [
+   "Noam Brown",
+   "Mustafa Suleyman",
+   "Richard Ho",
+   "Dina Powell McCormick",
+   "Brad Gerstner",
+   "Harley Bassman",
+   "Julian Emanuel",
+   "Bill Dudley"
+  ]
+ },
  "guests:5c00fdf622c120e4": {
   "date": "2026-09-14",
   "value": [
@@ -216,6 +229,26 @@
  "ideas:d708b46cf1692afa": {
   "date": "2026-09-11",
   "value": []
+ },
+ "ideas:dfe762f703aba7c6": {
+  "date": "2026-09-17",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Brad Gerstner on All-In Podcast believes NVIDIA at 14x next year's earnings is not a bubble, with the trade dependent on lab revenue roughly doubling and buildout executing, expecting closer to 25 gigawatts next year against a 43-gigawatt forecast.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dina Powell McCormick on All-In Podcast discusses Meta's data center investments and AI strategy, highlighting the company's glasses bet and workforce academy initiatives as part of Meta's future growth plans.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bearish",
+    "thesis": "Mustafa Suleyman, CEO of Microsoft AI, on Decoder podcast expresses concerns about AI alignment and containment risks, with critical views on Anthropic's approach to AI safety.",
+    "ticker": "MSFT"
+   }
+  ]
  },
  "ideas:e05d8d30817fc656": {
   "date": "2026-09-14",
