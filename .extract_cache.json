@@ -89,6 +89,25 @@
    "Inigo Fraser Jenkins"
   ]
  },
+ "guests:84242623dddbce64": {
+  "date": "2026-09-17",
+  "value": [
+   "Satya Nadella",
+   "Logan Kilpatrick",
+   "Julian Emanuel",
+   "Bill Dudley",
+   "Ed Yardeni",
+   "Francis Fukuyama",
+   "Brad Gerstner",
+   "Michael Monahan",
+   "Steve Nison",
+   "Dean Curnutt",
+   "Robert Armstrong",
+   "Alice Han",
+   "Ed Zitron",
+   "Mark Zandi"
+  ]
+ },
  "guests:8ab069e75264509b": {
   "date": "2026-09-14",
   "value": [
@@ -100,26 +119,6 @@
    "David Tinsley",
    "Naomi Fink",
    "Seth Bernstein"
-  ]
- },
- "guests:bd5c6939d082a2e8": {
-  "date": "2026-09-09",
-  "value": [
-   "Tyler Gardner",
-   "Mike Wilson",
-   "Bruce Van Saun",
-   "Mike Feroli",
-   "Seema Shah",
-   "Jay Hatfield",
-   "Omar Aguilar",
-   "Bill Cohan",
-   "Mike Moffatt",
-   "John Burn-Murdoch",
-   "Inigo Fraser Jenkins",
-   "Gary Marcus",
-   "Kathryn Anne Edwards",
-   "Walter Russell Mead",
-   "Dan Chung"
   ]
  },
  "guests:c16b64d6518fbf58": {
@@ -210,10 +209,6 @@
    }
   ]
  },
- "ideas:bd5c6939d082a2e8": {
-  "date": "2026-09-09",
-  "value": []
- },
  "ideas:c16b64d6518fbf58": {
   "date": "2026-09-15",
   "value": []
@@ -239,6 +234,31 @@
     "sentiment": "bearish",
     "thesis": "All-In Podcast reports Nike was removed from S&P 100 after stock tanked 80%, representing a $200B collapse.",
     "ticker": "NKE"
+   }
+  ]
+ },
+ "ideas:e9614acc135fcaed": {
+  "date": "2026-09-17",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Satya Nadella on All-In discussed Microsoft's capital allocation across OpenAI, Anthropic and its own models, with emphasis on where AI profits land.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Logan Kilpatrick of Google DeepMind on The Pomp Podcast discussed Google's billion dollar bet to win the AI race through Gemini 4's massive pre-training run and frontier commitment.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Jeetu Patel, Cisco President and Chief Product Officer on MTS discussed Cisco's AI vulnerability-detection partnerships with Anthropic and OpenAI as a growth opportunity.",
+    "ticker": "CSCO"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access companies led by founders with strong returns potential.",
+    "ticker": "FFF"
    }
   ]
  },
