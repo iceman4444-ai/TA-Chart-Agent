@@ -37,19 +37,6 @@
    "Sinjin Bowron"
   ]
  },
- "guests:2acf71cbda3c6aca": {
-  "date": "2026-09-10",
-  "value": [
-   "Inigo Fraser Jenkins",
-   "Walter Russell Mead",
-   "Greg Peters",
-   "Tina Fordham",
-   "Heath Terry",
-   "Molly Pieroni",
-   "Mike Reid",
-   "Libby Cantrill"
-  ]
- },
  "guests:43455f2e6bdf54fa": {
   "date": "2026-09-11",
   "value": [
@@ -89,17 +76,17 @@
    "David Tinsley"
   ]
  },
- "guests:63874a3174783332": {
-  "date": "2026-09-10",
+ "guests:789e9b5c89321242": {
+  "date": "2026-09-18",
   "value": [
-   "Matt Barrie",
-   "Tina Fordham",
-   "Greg Peters",
-   "Heath Terry",
-   "Molly Pieroni",
-   "Scott Glenn",
-   "Tyler Gardner",
-   "Inigo Fraser Jenkins"
+   "Ali Ghodsi",
+   "Dan Niles",
+   "Alex Karp",
+   "Lihong Wang",
+   "Noam Brown",
+   "Mustafa Suleyman",
+   "Richard Ho",
+   "Dina Powell McCormick"
   ]
  },
  "guests:84242623dddbce64": {
@@ -173,21 +160,6 @@
    "Noam Brown"
   ]
  },
- "ideas:2acf71cbda3c6aca": {
-  "date": "2026-09-10",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Inigo Fraser Jenkins, Chief Investment Strategist at AllianceBernstein, makes the case for gold as money and argues it should play a role in portfolios during a period of higher expected future inflation and declining diversification benefits from traditional assets.",
-    "ticker": "GLD"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Scott Glenn, VP of Asset Protection at Home Depot, discusses the company's response to organized retail crime and shoplifting challenges affecting retail operations and inventory management.",
-    "ticker": "HD"
-   }
-  ]
- },
  "ideas:3955ac8be833ef17": {
   "date": "2026-09-14",
   "value": [
@@ -207,24 +179,39 @@
   "date": "2026-09-11",
   "value": []
  },
- "ideas:718ccbcc24d295fd": {
-  "date": "2026-09-10",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Molly Pieroni at Yacktman Asset Management sees U-Haul as having value with strong services and a durable moat to withstand inflation concerns, per Schwab Network.",
-    "ticker": "UHAL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Molly Pieroni at Yacktman Asset Management believes Alphabet has significant value as a Mag 7 company with a suite of tech products and potential to accelerate from AI innovation, per Schwab Network.",
-    "ticker": "GOOGL"
-   }
-  ]
- },
  "ideas:c16b64d6518fbf58": {
   "date": "2026-09-15",
   "value": []
+ },
+ "ideas:d5637595a028ffcc": {
+  "date": "2026-09-18",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Brad Gerstner on All-In Podcast argues NVIDIA at 14x next year's earnings is no bubble, though the trade depends on lab revenue roughly doubling and buildout executing at closer to 25 gigawatts next year against a 43-gigawatt forecast.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles on RiskReversal Pod views Meta as a dark-horse beneficiary of AI via consumer distribution and strong data capabilities.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles on RiskReversal Pod expects Google to reassert leadership due to data and cloud acceleration advantages.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles on RiskReversal Pod outlines Microsoft's advantage through its OpenAI stake and security-focused Copilot positioning.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles on RiskReversal Pod is bullish on Apple for 2025 driven by a foldable-phone upgrade cycle despite near-term execution risks.",
+    "ticker": "AAPL"
+   }
+  ]
  },
  "ideas:d708b46cf1692afa": {
   "date": "2026-09-11",
