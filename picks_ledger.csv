@@ -395,3 +395,9 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-18,control,MRVL,4.3,240.76,230.80,morning,11.5,57,4.1,Risk-on,bullish
 2026-09-18,control,AAPL,4.2,337.00,321.40,morning,5.4,65,4.6,Risk-on,bullish
 2026-09-18,control,DGX,4.3,247.45,240.85,morning,6.7,65,2.7,Risk-on,bullish
+2026-09-18,pick,MSTR,4.8,153.92,153.00,afternoon,38.9,66,0.6,Risk-on,bullish
+2026-09-18,pick,HPE,4.6,60.76,55.11,afternoon,16.1,60,9.3,Risk-on,bullish
+2026-09-18,setup,MSFT,3.3,493.78,486.00,afternoon,6.4,53,1.6,Risk-on,bullish
+2026-09-18,control,A,4.3,156.47,151.74,afternoon,7.6,63,3.0,Risk-on,bullish
+2026-09-18,control,TMO,4.3,651.45,622.92,afternoon,10.3,68,4.4,Risk-on,bullish
+2026-09-18,control,NTAP,4.3,197.79,188.97,afternoon,7.3,58,4.5,Risk-on,bullish

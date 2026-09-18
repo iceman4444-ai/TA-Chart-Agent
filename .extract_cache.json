@@ -1,4 +1,26 @@
 {
+ "guests:03f28df6c4acc779": {
+  "date": "2026-09-18",
+  "value": [
+   "Ali Ghodsi",
+   "Dan Niles",
+   "Alex Karp",
+   "Noam Brown",
+   "Mustafa Suleyman",
+   "Richard Ho",
+   "Dina Powell McCormick",
+   "Brad Gerstner",
+   "Glen Kacher",
+   "Jared Isaacman",
+   "Vincent Deluard",
+   "Roger Ibbotson",
+   "Nick Bostrom",
+   "Owen Zidar",
+   "Eric Zwick",
+   "Nick Shirley",
+   "Harley Bassman"
+  ]
+ },
  "guests:0e1c7aa1c2b7d3d8": {
   "date": "2026-09-16",
   "value": [
@@ -158,6 +180,41 @@
    "Sri Santhanam",
    "Andrew Feldman",
    "Noam Brown"
+  ]
+ },
+ "ideas:01fa02536feb40f6": {
+  "date": "2026-09-18",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Brad Gerstner (All-In Podcast) believes NVIDIA at 14x next year's earnings is not a bubble, supported by lab revenue roughly doubling and buildout executing, though he expects closer to 25 gigawatts next year against a 43-gigawatt forecast.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles (RiskReversal) views Meta as a dark-horse beneficiary of AI spending via consumer distribution.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles (RiskReversal) sees Microsoft's advantage through its OpenAI stake and security-focused Copilot in the AI buildout.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles (RiskReversal) expects Google to reassert AI leadership due to its data and cloud acceleration capabilities.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Dan Niles (RiskReversal) is bullish on Apple for 2025 driven by a foldable-phone upgrade cycle, despite near-term execution risks.",
+    "ticker": "AAPL"
+   },
+   {
+    "sentiment": "bearish",
+    "thesis": "Ali Ghodsi (Databricks CEO, Long Strange Trip) discusses beating Snowflake through Databricks' open format and claimed 3x TCO edge.",
+    "ticker": "SNOW"
+   }
   ]
  },
  "ideas:3955ac8be833ef17": {
