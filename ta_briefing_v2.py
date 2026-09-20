@@ -1941,9 +1941,20 @@ POSTMORTEM_SYSTEM = (
     "(morning/afternoon), score (the system's 1-5 bullishness, where scan "
     "picks are by construction always ~4-5 so they carry almost no variance), "
     "ext_50 (percent above the 50-day average at entry), rsi, stop_pct "
-    "(percent below entry the stop sat), regime (the tape that day), rets "
-    "and alphas (forward return and excess return over SPY at each horizon), "
-    "and broke (whether the recorded support level was breached).\n\n"
+    "(percent below entry the stop sat), regime (the tape that day), "
+    "sentiment (bullish, or bearish and therefore graded as a short). "
+    "Outcomes are keyed by horizon: ret (percent return if held to the "
+    "horizon), vs_spy (the same, less SPY over the identical window), "
+    "ret_stopped (the return actually delivered by the stated exit rule — "
+    "sell at the next open after the first close below support), and "
+    "support_broke (whether support was breached within that horizon). The "
+    "gap between ret and ret_stopped is the cost of the exit rule; the "
+    "short rows carry no stop fields because that machinery is long-only. "
+    "Horizons present depend on an idea's age, so a name may be graded at "
+    "1-Week and not yet at 1-Month — never read an absent horizon as a "
+    "zero or a loss. Entry-context fields were added to the ledger partway "
+    "through and are simply absent on older rows; treat those as unmeasured "
+    "and say so when a split rests on them.\n\n"
     "Answer three questions, in this order:\n"
     "1. What entry conditions actually separate the winners from the losers? "
     "Give the numbers you computed.\n"
@@ -1987,23 +1998,50 @@ AUDIT_SYSTEM = (
 )
 
 
+# Entry conditions handed to the analyst verbatim. Naming them here rather
+# than inline keeps this list next to nothing else, so a rename in
+# grade_ledger that breaks it is caught by the round-trip test instead of by
+# a production run — which is how the stale scalar "broke" key survived the
+# split into per-horizon breaches until the first post-mortem was attempted.
+POSTMORTEM_CONTEXT = (
+    "ticker", "date", "kind", "slot", "score", "ext_50", "rsi",
+    "stop_pct", "regime", "sentiment",
+)
+
+
+def postmortem_rows(graded: list[dict]) -> list[dict]:
+    """Graded ledger entries flattened into the analyst's input records.
+
+    Percentages rather than fractions, and the outcome split three ways per
+    horizon: the return if held, the return if the stop was honoured, and
+    whether support broke at all. The gap between held and stopped is the
+    cost of the exit rule, which is a question the ledger can answer and the
+    scorecard only summarises.
+    """
+    missing = sorted(set(POSTMORTEM_CONTEXT) - set(graded[0])) if graded else []
+    if missing:
+        raise KeyError(f"grade_ledger no longer emits: {', '.join(missing)}")
+    return [
+        # Entry context was added to the ledger partway through, so the
+        # oldest rows have none. Omit the blanks rather than sending empty
+        # strings, which an analyst could read as a measured zero.
+        {k: g[k] for k in POSTMORTEM_CONTEXT if g[k] != ""} | {
+            "ret": {h: round(v * 100, 2) for h, v in g["rets"].items()},
+            "vs_spy": {h: round(v * 100, 2) for h, v in g["alphas"].items()},
+            "ret_stopped": {h: round(v * 100, 2) for h, v in g["stopped"].items()},
+            "support_broke": g["brokes"],
+        }
+        for g in graded
+    ]
+
+
 def run_postmortem(cfg: dict) -> str | None:
     """Ask the frontier model what the ledger implies about the system."""
     graded = grade_ledger(cfg)
     if len(graded) < 20:
         log(f"post-mortem: only {len(graded)} graded idea(s) — too few to analyse")
         return None
-    rows = [
-        {
-            k: g[k] for k in
-            ("ticker", "date", "kind", "slot", "score", "ext_50", "rsi",
-             "stop_pct", "regime", "broke")
-        } | {
-            "ret": {h: round(v * 100, 2) for h, v in g["rets"].items()},
-            "vs_spy": {h: round(v * 100, 2) for h, v in g["alphas"].items()},
-        }
-        for g in graded
-    ]
+    rows = postmortem_rows(graded)
     log(f"post-mortem: analysing {len(rows)} graded ideas")
     return fable_report(
         POSTMORTEM_SYSTEM, json.dumps(rows, separators=(",", ":")), "post-mortem"
