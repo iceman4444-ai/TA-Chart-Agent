@@ -2842,7 +2842,10 @@ def build_html(
             f"<td>{s['rsi']} ({s['rsi_state']})</td><td>{s['macd_state']}</td>"
             f"<td>{s['trend']} {s['slow_name']}</td></tr>"
         )
-    sections = []
+    # Section order: the scorecard shows podcast-sourced ideas carrying
+    # the edge, so they lead; the scan's picks follow, then context.
+    sec_positions, sec_setups, sec_podcast = [], [], []
+    sec_picks, sec_market = [], []
     if positions:
         breached = [p["ticker"] for p in positions if p["breached"]]
         block = "<h3 style='font-family:sans-serif'>Your Positions</h3>"
@@ -2881,7 +2884,7 @@ def build_html(
                 "holdings are inferred from confirmed buy/sell activity and "
                 "average cost is the average confirmed buy price.</p>"
             )
-        sections.append(block)
+        sec_positions.append(block)
     for s in summaries:
         ticker = s["ticker"]
         heading_line = ticker + (f" — bullish score {s['score']}" if has_score else "")
@@ -2931,7 +2934,7 @@ def build_html(
             block += f"<ul style='font-size:13px;max-width:860px'>{headlines}</ul>"
         if ticker in cids:
             block += f"<img src='cid:{cids[ticker]}' width='860' style='max-width:100%'/>"
-        sections.append(block)
+        sec_picks.append(block)
     if market and (market.get("text") or market.get("cid")):
         block = "<h3 style='font-family:sans-serif'>Market Summary — SPY &amp; QQQ</h3>"
         if market.get("text"):
@@ -2957,7 +2960,7 @@ def build_html(
             )
         if market.get("cid"):
             block += f"<img src='cid:{market['cid']}' width='860' style='max-width:100%'/>"
-        sections.append(block)
+        sec_market.append(block)
     if podcast and (
         podcast.get("highlights") or podcast.get("episodes") or podcast.get("text")
     ):
@@ -3012,7 +3015,7 @@ def build_html(
             )
         elif podcast.get("source"):
             block += f"<p style='color:#777;font-size:12px'>Source: {podcast['source']}</p>"
-        sections.append(block)
+        sec_podcast.append(block)
     if setups:
         block = "<h3 style='font-family:sans-serif'>Podcast Trade Setups</h3>"
         for st in setups:
@@ -3057,7 +3060,9 @@ def build_html(
                 block += (
                     f"<img src='cid:{cids[st['ticker']]}' width='860' style='max-width:100%'/>"
                 )
-        sections.append(block)
+        sec_setups.append(block)
+    sections = (sec_positions + sec_setups + sec_podcast
+                + sec_picks + sec_market)
     if scorecard:
         sections.append(scorecard)
     charts = "".join(sections)
