@@ -169,6 +169,19 @@
    "Chris Power"
   ]
  },
+ "guests:ffa4440a164b3809": {
+  "date": "2026-09-21",
+  "value": [
+   "Adam Foroughi",
+   "Mark Wade",
+   "Thomas Sohmers",
+   "Vlad Tenev",
+   "Tulsee Doshi",
+   "Bob McNally",
+   "Ulrike Hoffmann-Burchardi",
+   "James Egelhof"
+  ]
+ },
  "ideas:01fa02536feb40f6": {
   "date": "2026-09-18",
   "value": [
@@ -201,6 +214,26 @@
     "sentiment": "bearish",
     "thesis": "Ali Ghodsi (Databricks CEO, Long Strange Trip) discusses beating Snowflake through Databricks' open format and claimed 3x TCO edge.",
     "ticker": "SNOW"
+   }
+  ]
+ },
+ "ideas:1a94de5b91a71af5": {
+  "date": "2026-09-21",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "AppLovin CEO Adam Foroughi on All-In podcast highlighted the $50B mobile gaming ad market growing 60% annually, a buyback program that retired 20-25% of shares for $6B, and an 84% EBITDA margin as a competitive moat.",
+    "ticker": "APP"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Google's Gemini product development was discussed on The Skip podcast, with product lead Tulsee Doshi noting Gemini 4 in development with strong internal momentum and focus on live-experiment behavior shifts as key shipping metrics.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Robinhood CEO Vlad Tenev on Moonshots podcast discussed the company's blockchain initiatives with 200 stock tokens and $1B+ daily DEX volume, plus 100,000+ accounts running AI trading agents.",
+    "ticker": "HOOD"
    }
   ]
  },

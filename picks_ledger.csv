@@ -412,3 +412,10 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-21,control,WAT,4.4,421.63,412.82,morning,5.8,59,2.1,Risk-on,bullish
 2026-09-21,control,AMD,4.2,559.82,495.85,morning,12.9,65,11.4,Risk-on,bullish
 2026-09-21,control,SNDK,4.5,1791.82,1591.42,morning,19.1,61,11.2,Risk-on,bullish
+2026-09-21,pick,AMD,4.8,615.52,515.56,afternoon,23.8,73,16.2,Risk-on,bullish
+2026-09-21,pick,INTC,4.8,121.78,117.67,afternoon,25.1,71,3.4,Risk-on,bullish
+2026-09-21,setup,APP,3.4,330.17,316.61,afternoon,-6.6,50,4.1,Risk-on,bullish
+2026-09-21,setup,HOOD,4.6,123.30,112.05,afternoon,19.2,62,9.1,Risk-on,neutral
+2026-09-21,control,ARM,4.5,322.90,317.98,afternoon,23.7,69,1.5,Risk-on,bullish
+2026-09-21,control,A,4.3,161.94,151.88,afternoon,10.9,69,6.2,Risk-on,bullish
+2026-09-21,control,ANET,4.5,205.42,194.65,afternoon,9.3,60,5.2,Risk-on,bullish
