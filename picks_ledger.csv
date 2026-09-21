@@ -401,3 +401,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-18,control,A,4.3,156.47,151.74,afternoon,7.6,63,3.0,Risk-on,bullish
 2026-09-18,control,TMO,4.3,651.45,622.92,afternoon,10.3,68,4.4,Risk-on,bullish
 2026-09-18,control,NTAP,4.3,197.79,188.97,afternoon,7.3,58,4.5,Risk-on,bullish
+2026-09-21,pick,MSTR,4.8,153.92,153.00,morning,38.9,66,0.6,Risk-on,bullish
+2026-09-21,pick,BE,4.8,265.63,249.23,morning,17.8,58,6.2,Risk-on,bullish
+2026-09-21,pick,DELL,4.8,568.06,503.67,morning,22.8,62,11.3,Risk-on,bullish
+2026-09-21,pick,SWKS,4.8,88.76,82.67,morning,29.4,65,6.9,Risk-on,bullish
+2026-09-21,pick,CRWD,4.6,237.65,215.86,morning,14.8,60,9.2,Risk-on,bullish
+2026-09-21,setup,META,4.5,665.75,657.53,morning,9.6,66,1.2,Risk-on,bullish
+2026-09-21,setup,MSFT,3.3,493.78,486.00,morning,6.4,53,1.6,Risk-on,bullish
+2026-09-21,setup,GOOGL,3.8,349.54,345.40,morning,1.2,55,1.2,Risk-on,bullish
+2026-09-21,control,WAT,4.4,421.63,412.82,morning,5.8,59,2.1,Risk-on,bullish
+2026-09-21,control,AMD,4.2,559.82,495.85,morning,12.9,65,11.4,Risk-on,bullish
+2026-09-21,control,SNDK,4.5,1791.82,1591.42,morning,19.1,61,11.2,Risk-on,bullish
