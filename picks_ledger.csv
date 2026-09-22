@@ -430,3 +430,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-22,control,CRWD,4.7,249.35,218.73,morning,19.7,65,12.3,Risk-on,bullish
 2026-09-22,control,HPE,4.6,61.75,55.53,morning,17.4,61,10.1,Risk-on,bullish
 2026-09-22,control,TMO,4.4,658.76,624.42,morning,11.1,70,5.2,Risk-on,bullish
+2026-09-22,pick,QCOM,4.9,198.27,189.22,afternoon,17.8,68,4.6,Risk-on,bullish
+2026-09-22,pick,SNDK,4.9,1887.04,1861.61,afternoon,25.3,65,1.3,Risk-on,bullish
+2026-09-22,pick,MU,4.8,1096.16,1031.68,afternoon,17.6,66,5.9,Risk-on,bullish
+2026-09-22,control,MRNA,4.8,182.56,150.40,afternoon,78.0,72,17.6,Risk-on,bullish
+2026-09-22,control,META,4.5,736.59,701.13,afternoon,20.8,76,4.8,Risk-on,bullish
