@@ -419,3 +419,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-21,control,ARM,4.5,322.90,317.98,afternoon,23.7,69,1.5,Risk-on,bullish
 2026-09-21,control,A,4.3,161.94,151.88,afternoon,10.9,69,6.2,Risk-on,bullish
 2026-09-21,control,ANET,4.5,205.42,194.65,afternoon,9.3,60,5.2,Risk-on,bullish
+2026-09-22,pick,MSTR,4.8,168.50,153.00,morning,50.1,71,9.2,Risk-on,bullish
+2026-09-22,pick,AMD,4.8,615.52,515.57,morning,23.8,73,16.2,Risk-on,bullish
+2026-09-22,pick,BE,4.8,272.89,251.04,morning,20.8,60,8.0,Risk-on,bullish
+2026-09-22,pick,DELL,4.8,575.31,510.33,morning,23.6,63,11.3,Risk-on,bullish
+2026-09-22,pick,INTC,4.8,121.78,117.67,morning,25.1,71,3.4,Risk-on,bullish
+2026-09-22,setup,APP,3.4,330.17,316.61,morning,-6.6,50,4.1,Risk-on,bullish
+2026-09-22,setup,GOOGL,3.8,354.97,345.36,morning,2.8,59,2.7,Risk-on,bullish
+2026-09-22,setup,META,4.2,741.25,697.86,morning,21.8,78,5.9,Risk-on,bullish
+2026-09-22,control,CRWD,4.7,249.35,218.73,morning,19.7,65,12.3,Risk-on,bullish
+2026-09-22,control,HPE,4.6,61.75,55.53,morning,17.4,61,10.1,Risk-on,bullish
+2026-09-22,control,TMO,4.4,658.76,624.42,morning,11.1,70,5.2,Risk-on,bullish

@@ -72,17 +72,17 @@
    "Bill Dudley"
   ]
  },
- "guests:5c00fdf622c120e4": {
-  "date": "2026-09-14",
+ "guests:5c28d7f645ce2f11": {
+  "date": "2026-09-22",
   "value": [
-   "Greg Brockman",
-   "Robert Friedland",
-   "Christopher Wright",
-   "Seth Bernstein",
-   "Dan Ives",
-   "Lori Calvasina",
-   "Jennifer Huddleston",
-   "David Tinsley"
+   "Adam Foroughi",
+   "Mark Wade",
+   "Thomas Sohmers",
+   "Vlad Tenev",
+   "Tulsee Doshi",
+   "Blake Scholl",
+   "Naveen Rao",
+   "Gabe Stengel"
   ]
  },
  "guests:789e9b5c89321242": {
@@ -115,19 +115,6 @@
    "Alice Han",
    "Ed Zitron",
    "Mark Zandi"
-  ]
- },
- "guests:8ab069e75264509b": {
-  "date": "2026-09-14",
-  "value": [
-   "Greg Brockman",
-   "Robert Friedland",
-   "Christopher Wright",
-   "Dan Ives",
-   "Lori Calvasina",
-   "David Tinsley",
-   "Naomi Fink",
-   "Seth Bernstein"
   ]
  },
  "guests:c16b64d6518fbf58": {
@@ -287,18 +274,28 @@
    }
   ]
  },
- "ideas:3955ac8be833ef17": {
-  "date": "2026-09-14",
+ "ideas:acc2c12d85c0cc60": {
+  "date": "2026-09-22",
   "value": [
    {
-    "sentiment": "bearish",
-    "thesis": "Nike removed from S&P 100 after stock tanks 80%, representing a major corporate collapse on All-In with Chamath, Jason, Sacks & Friedberg.",
-    "ticker": "NKE"
+    "sentiment": "bullish",
+    "thesis": "AppLovin CEO Adam Foroughi highlighted the $50B mobile-gaming ad market growing 60% annually, 84% EBITDA margins as a moat, and a buyback program that has retired 20-25% of shares, per All-In podcast.",
+    "ticker": "APP"
    },
    {
-    "sentiment": "neutral",
-    "thesis": "Prof G Markets discusses iPhone Duo and what's next for Apple as John Ternus takes over from Tim Cook, indicating transition uncertainty.",
-    "ticker": "AAPL"
+    "sentiment": "bullish",
+    "thesis": "Google's Gemini product development is advancing with Gemini 4 in development and strong internal momentum, per The Skip podcast.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meta's new AI product strategy positions the company to quietly win the AI race with smart product moves, per Prof G Markets.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Robinhood CEO Vlad Tenev discussed Robinhood Chain's 200 stock tokens with $1B+ daily DEX volume, 7M Trump Accounts opened, and 100K+ AI trading agent accounts, per Moonshots podcast.",
+    "ticker": "HOOD"
    }
   ]
  },
@@ -353,26 +350,6 @@
     "sentiment": "bearish",
     "thesis": "Mustafa Suleyman, CEO of Microsoft AI, on Decoder podcast expresses concerns about AI alignment and containment risks, with critical views on Anthropic's approach to AI safety.",
     "ticker": "MSFT"
-   }
-  ]
- },
- "ideas:e05d8d30817fc656": {
-  "date": "2026-09-14",
-  "value": [
-   {
-    "sentiment": "neutral",
-    "thesis": "Prof G Markets discusses iPhone Duo and Apple's transition as John Ternus takes over from Tim Cook, raising questions about product strategy and leadership impact.",
-    "ticker": "AAPL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Robert Friedland, Executive Co-Chairman of Ivanhoe Mines, warns of a monumental shortage of copper driven by data centers, electric cars, and reindustrialization, with copper prices surging 15% this year on Odd Lots.",
-    "ticker": "IVN"
-   },
-   {
-    "sentiment": "bearish",
-    "thesis": "All-In Podcast reports Nike was removed from S&P 100 after stock tanked 80%, representing a $200B collapse.",
-    "ticker": "NKE"
    }
   ]
  },
