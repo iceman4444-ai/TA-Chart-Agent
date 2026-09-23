@@ -446,3 +446,10 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-23,control,QCOM,4.5,194.23,189.22,morning,15.7,66,2.6,Risk-on,bullish
 2026-09-23,control,FFIV,4.4,450.10,406.48,morning,11.1,67,9.7,Risk-on,bullish
 2026-09-23,control,HOOD,4.6,123.30,112.05,morning,19.2,62,9.1,Risk-on,bullish
+2026-09-23,pick,CRWD,5.0,262.49,222.32,afternoon,25.1,69,15.3,Risk-on,bullish
+2026-09-23,pick,FFIV,4.8,455.99,413.59,afternoon,12.4,69,9.3,Risk-on,bullish
+2026-09-23,pick,QCOM,4.8,197.24,189.22,afternoon,17.0,67,4.1,Risk-on,bullish
+2026-09-23,pick,SNDK,4.8,1816.57,1636.43,afternoon,20.6,60,9.9,Risk-on,bullish
+2026-09-23,setup,META,4.5,744.10,706.19,afternoon,21.7,77,5.1,Risk-on,neutral
+2026-09-23,control,TSM,4.4,446.57,438.66,afternoon,6.9,61,1.8,Risk-on,bullish
+2026-09-23,control,AMD,4.7,614.61,521.68,afternoon,22.9,71,15.1,Risk-on,bullish

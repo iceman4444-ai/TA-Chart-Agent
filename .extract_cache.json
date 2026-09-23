@@ -46,6 +46,19 @@
    "Satya Nadella"
   ]
  },
+ "guests:2939553151f36ef3": {
+  "date": "2026-09-23",
+  "value": [
+   "Demis Hassabis",
+   "Neal Mohan",
+   "Houda Nait El Barj",
+   "Ben Thompson",
+   "Mark Russinovich",
+   "Marc Benioff",
+   "Vinod Khosla",
+   "Gabe Stengel"
+  ]
+ },
  "guests:485ddc516a1361a8": {
   "date": "2026-09-17",
   "value": [
@@ -306,6 +319,36 @@
     "sentiment": "bullish",
     "thesis": "Vlad Tenev, Robinhood CEO, discussed the company's Robinhood Chain with 200 stock tokens, $1B+ daily DEX volume, and 100,000+ accounts running AI trading agents on Moonshots podcast.",
     "ticker": "HOOD"
+   }
+  ]
+ },
+ "ideas:ab432e49ea7d4c0c": {
+  "date": "2026-09-23",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "YouTube CEO Neal Mohan on Big Technology Podcast says AI now sits under creation, discovery and search with Gemini-powered tools, and AI-made content gets no penalty or favor, only audience decides, positioning Google for AI-driven creator and discovery tools.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Salesforce CEO Marc Benioff on Sources with Alex Heath says Slack matters more in the age of agents and the wealth from Anthropic and OpenAI IPOs is creating significant industry opportunities.",
+    "ticker": "CRM"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Vinod Khosla on TBPN notes that Amazon blocked Meta's Muse personal agent, highlighting platform conflicts but indicating Meta is competing in the agent market that Khosla sees as broad and non-winner-take-all.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Ben Thompson on TBPN with John Coogan and Jordi Hays argues that Amazon's delivery certainty and returns beat Shopify's asset-light model once an agent does the buying, giving Amazon a logistics moat.",
+    "ticker": "AMZN"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Animal Spirits Podcast episode 483 discusses Nvidia's valuation as a chart-of-the-year candidate amid interconnected hyperscalers and AI's economic risk.",
+    "ticker": "NVDA"
    }
   ]
  },
