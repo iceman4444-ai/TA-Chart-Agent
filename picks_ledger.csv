@@ -435,3 +435,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-22,pick,MU,4.8,1096.16,1031.68,afternoon,17.6,66,5.9,Risk-on,bullish
 2026-09-22,control,MRNA,4.8,182.56,150.40,afternoon,78.0,72,17.6,Risk-on,bullish
 2026-09-22,control,META,4.5,736.59,701.13,afternoon,20.8,76,4.8,Risk-on,bullish
+2026-09-23,pick,MSTR,4.8,168.50,153.00,morning,50.1,71,9.2,Risk-on,bullish
+2026-09-23,pick,AMD,4.8,615.52,515.57,morning,23.8,73,16.2,Risk-on,bullish
+2026-09-23,pick,BE,4.8,272.89,251.04,morning,20.8,60,8.0,Risk-on,bullish
+2026-09-23,pick,DELL,4.8,575.31,510.33,morning,23.6,63,11.3,Risk-on,bullish
+2026-09-23,pick,INTC,4.8,121.78,117.67,morning,25.1,71,3.4,Risk-on,bullish
+2026-09-23,setup,CRM,3.3,236.42,221.30,morning,13.6,52,6.4,Risk-on,bullish
+2026-09-23,setup,APP,3.4,330.17,316.61,morning,-6.6,50,4.1,Risk-on,bullish
+2026-09-23,setup,GOOGL,3.8,354.97,345.36,morning,2.8,59,2.7,Risk-on,bullish
+2026-09-23,control,QCOM,4.5,194.23,189.22,morning,15.7,66,2.6,Risk-on,bullish
+2026-09-23,control,FFIV,4.4,450.10,406.48,morning,11.1,67,9.7,Risk-on,bullish
+2026-09-23,control,HOOD,4.6,123.30,112.05,morning,19.2,62,9.1,Risk-on,bullish

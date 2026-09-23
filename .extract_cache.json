@@ -46,19 +46,6 @@
    "Satya Nadella"
   ]
  },
- "guests:21833400a0548c76": {
-  "date": "2026-09-15",
-  "value": [
-   "Satya Nadella",
-   "Elon Musk",
-   "Gwynne Shotwell",
-   "Greg Brockman",
-   "George Noble",
-   "Dominic Konstam",
-   "Marina Zavolock",
-   "Sinjin Bowron"
-  ]
- },
  "guests:485ddc516a1361a8": {
   "date": "2026-09-17",
   "value": [
@@ -117,17 +104,35 @@
    "Mark Zandi"
   ]
  },
- "guests:c16b64d6518fbf58": {
-  "date": "2026-09-15",
+ "guests:cfa39cdbe7606097": {
+  "date": "2026-09-23",
   "value": [
-   "George Noble",
-   "Dominic Konstam",
-   "Marina Zavolock",
-   "Sinjin Bowron",
-   "Gwynne Shotwell",
-   "Elon Musk",
-   "Jensen Huang",
-   "Greg Brockman"
+   "Marc Benioff",
+   "Gabe Stengel",
+   "Vinod Khosla",
+   "Diogo Almeida",
+   "Naveen Rao",
+   "Adam Foroughi",
+   "Mark Wade",
+   "Vlad Tenev",
+   "Tulsee Doshi",
+   "Gargi Chaudhuri",
+   "David Rubenstein",
+   "Lauren Saidel-Baker",
+   "Matt Luzzetti",
+   "Aaron Kennon",
+   "Amos Hochstein",
+   "Juan Londo\u00f1o",
+   "Matt Smith",
+   "Jonathan Cohen",
+   "Steve Hilton",
+   "Spencer Pratt",
+   "Blake Scholl",
+   "Rohan Goswami",
+   "Conor Sen",
+   "Bill Mann",
+   "Tom Mueller",
+   "Chris Power"
   ]
  },
  "guests:e0698fc1a6bbd858": {
@@ -274,6 +279,36 @@
    }
   ]
  },
+ "ideas:3ff1f5b27052a310": {
+  "date": "2026-09-23",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Marc Benioff, Salesforce CEO, emphasized Slack's increased importance in the age of AI agents and discussed the company's role in the Hugging Face acquisition on TMTB Podcast Intel.",
+    "ticker": "CRM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Adam Foroughi, AppLovin CEO, highlighted the roughly $50B mobile-gaming ad market with AppLovin's platform growing about 60% a year and an 84% EBITDA margin on All-In podcast.",
+    "ticker": "APP"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Tulsee Doshi, product lead for Google's Gemini models, discussed Gemini 4 in development with internal hype building on The Skip podcast.",
+    "ticker": "GOOGL"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Robinhood CEO Vlad Tenev highlighted Meta's involvement in AI trading through Robinhood Ventures funds on Moonshots podcast.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Vlad Tenev, Robinhood CEO, discussed the company's Robinhood Chain with 200 stock tokens, $1B+ daily DEX volume, and 100,000+ accounts running AI trading agents on Moonshots podcast.",
+    "ticker": "HOOD"
+   }
+  ]
+ },
  "ideas:acc2c12d85c0cc60": {
   "date": "2026-09-22",
   "value": [
@@ -298,10 +333,6 @@
     "ticker": "HOOD"
    }
   ]
- },
- "ideas:c16b64d6518fbf58": {
-  "date": "2026-09-15",
-  "value": []
  },
  "ideas:d5637595a028ffcc": {
   "date": "2026-09-18",
@@ -375,36 +406,6 @@
     "sentiment": "bullish",
     "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access companies led by founders with strong returns potential.",
     "ticker": "FFF"
-   }
-  ]
- },
- "ideas:ea88bca4fd6f5f22": {
-  "date": "2026-09-15",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Satya Nadella discussed Microsoft's master plan for AI and capital allocation strategy on All-In Podcast, indicating the company is strategically positioned in AI infrastructure and development.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Oracle was highlighted as a partner connecting data, applications, and infrastructure for AI business outcomes on the All-In Podcast, suggesting involvement in enterprise AI solutions.",
-    "ticker": "ORCL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Meta was mentioned as a partner focused on AI tools and distributing technology benefits on the All-In Podcast, indicating continued AI investment and development.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Elon Musk discussed potential merger with SpaceX and future AI/autonomous capabilities on All-In Podcast, suggesting bullish outlook on Tesla's technology roadmap.",
-    "ticker": "TSLA"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Prof G Markets discussed Apple's iPhone Duo launch and leadership transition with John Ternus taking over from Tim Cook, suggesting potential product innovation ahead.",
-    "ticker": "AAPL"
    }
   ]
  },
