@@ -21,31 +21,6 @@
    "Harley Bassman"
   ]
  },
- "guests:0e1c7aa1c2b7d3d8": {
-  "date": "2026-09-16",
-  "value": [
-   "Jensen Huang",
-   "Gwynne Shotwell",
-   "Elon Musk",
-   "Tom Boger",
-   "Kaiann Drance",
-   "Sri Santhanam",
-   "Andrew Feldman",
-   "Noam Brown",
-   "Dan Niles",
-   "Michael Monahan",
-   "Gina Martin Adams",
-   "Stuart Russell",
-   "Jim Zelter",
-   "Steve Nison",
-   "Dean Curnutt",
-   "Ed Zitron",
-   "Mark Zandi",
-   "Michael Moritz",
-   "JD Vance",
-   "Satya Nadella"
-  ]
- },
  "guests:2939553151f36ef3": {
   "date": "2026-09-23",
   "value": [
@@ -148,17 +123,17 @@
    "Chris Power"
   ]
  },
- "guests:e0698fc1a6bbd858": {
-  "date": "2026-09-16",
+ "guests:d887da08eedee32a": {
+  "date": "2026-09-24",
   "value": [
-   "Jensen Huang",
-   "Gwynne Shotwell",
-   "Elon Musk",
-   "Tom Boger",
-   "Kaiann Drance",
-   "Sri Santhanam",
-   "Andrew Feldman",
-   "Noam Brown"
+   "Howard Marks",
+   "Elizabeth Economy",
+   "Michael Froman",
+   "Vasile Tofan",
+   "Rachel Karten",
+   "Taylor Lorenz",
+   "Luca Ferrari",
+   "Owen Zidar"
   ]
  },
  "guests:e2a6f08dd9c2d7ae": {
@@ -322,6 +297,21 @@
    }
   ]
  },
+ "ideas:4bc9e777885a6306": {
+  "date": "2026-09-24",
+  "value": [
+   {
+    "sentiment": "neutral",
+    "thesis": "Animal Spirits Podcast discusses Meta's personal assistant as part of broader AI capabilities discussion.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Animal Spirits Podcast mentions Nvidia's valuation as part of discussion on interconnected hyperscalers and AI's risk to the economy.",
+    "ticker": "NVDA"
+   }
+  ]
+ },
  "ideas:ab432e49ea7d4c0c": {
   "date": "2026-09-23",
   "value": [
@@ -449,61 +439,6 @@
     "sentiment": "bullish",
     "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access companies led by founders with strong returns potential.",
     "ticker": "FFF"
-   }
-  ]
- },
- "ideas:f2d5b11c346a61fa": {
-  "date": "2026-09-16",
-  "value": [
-   {
-    "sentiment": "bearish",
-    "thesis": "Jay Goldberg, Senior Analyst at Seaport Group on Bloomberg Surveillance, maintains a continue 'sell' recommendation on Nvidia amid AI anxiety concerns.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Jensen Huang, NVIDIA founder and CEO on All-In podcast, rebutted the 'pace-the-frontier' essay and discussed NVIDIA's capital allocation strategy and closed vs. open model competition.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Apple's Tom Boger, Kaiann Drance and Sri Santhanam on The Circuit discussed the benefits of vertically integrated approach and transition to 2-nanometer process technology for A20 Pro and M-series chips.",
-    "ticker": "AAPL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Satya Nadella on All-In podcast discussed Microsoft's master plan for AI and capital allocation strategy in the context of AI industry trends.",
-    "ticker": "MSFT"
-   }
-  ]
- },
- "ideas:facd8cb4240dbc5a": {
-  "date": "2026-09-16",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Jensen Huang on All-In discussed NVIDIA's capital allocation strategy and position in AI infrastructure, positioning the company as central to the AI build-out.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Apple's Tom Boger, Kaiann Drance and Sri Santhanam on The Circuit discussed the A20 Pro and M-series jump to 2-nanometer process technology and vertical integration benefits for AI capabilities.",
-    "ticker": "AAPL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Satya Nadella on All-In outlined Microsoft's master plan for AI capital allocation and positioning for AI dominance.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access founder-led companies similar to Peter Thiel's Founders Fund strategy.",
-    "ticker": "FFF"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Andrew Feldman on Uncapped discussed Cerebras' wafer-scale architecture as a fundamentally different approach to challenge NVIDIA with customers including OpenAI and the US government.",
-    "ticker": "CEREBRAS"
    }
   ]
  }

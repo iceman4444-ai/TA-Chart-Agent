@@ -453,3 +453,13 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-23,setup,META,4.5,744.10,706.19,afternoon,21.7,77,5.1,Risk-on,neutral
 2026-09-23,control,TSM,4.4,446.57,438.66,afternoon,6.9,61,1.8,Risk-on,bullish
 2026-09-23,control,AMD,4.7,614.61,521.68,afternoon,22.9,71,15.1,Risk-on,bullish
+2026-09-24,pick,CRWD,5.0,262.49,222.32,morning,25.1,69,15.3,Risk-on,bullish
+2026-09-24,pick,FFIV,4.8,455.99,413.66,morning,12.4,69,9.3,Risk-on,bullish
+2026-09-24,pick,INTC,4.8,122.60,117.95,morning,25.0,70,3.8,Risk-on,bullish
+2026-09-24,pick,QCOM,4.8,197.24,189.22,morning,17.0,67,4.1,Risk-on,bullish
+2026-09-24,pick,SNDK,4.8,1816.57,1636.43,morning,20.6,60,9.9,Risk-on,bullish
+2026-09-24,setup,META,4.5,744.10,706.19,morning,21.7,77,5.1,Risk-on,neutral
+2026-09-24,setup,NVDA,4.4,225.51,221.03,morning,4.8,56,2.0,Risk-on,neutral
+2026-09-24,control,ILMN,4.4,255.38,222.30,morning,23.8,71,13.0,Risk-on,bullish
+2026-09-24,control,SWKS,4.8,91.45,83.05,morning,30.9,67,9.2,Risk-on,bullish
+2026-09-24,control,LITE,4.4,937.00,912.92,morning,10.1,54,2.6,Risk-on,bullish
