@@ -34,17 +34,17 @@
    "Gabe Stengel"
   ]
  },
- "guests:485ddc516a1361a8": {
-  "date": "2026-09-17",
+ "guests:39969ed0a5c4c4ed": {
+  "date": "2026-09-25",
   "value": [
-   "Noam Brown",
-   "Mustafa Suleyman",
-   "Richard Ho",
-   "Dina Powell McCormick",
-   "Brad Gerstner",
-   "Harley Bassman",
-   "Julian Emanuel",
-   "Bill Dudley"
+   "Chen Goldberg",
+   "Nikesh Arora",
+   "Cristiano Amon",
+   "Todd McKinnon",
+   "Boaz Barak",
+   "Peter Tchir",
+   "Santiago Pena",
+   "Michael Gapen"
   ]
  },
  "guests:5c28d7f645ce2f11": {
@@ -71,25 +71,6 @@
    "Mustafa Suleyman",
    "Richard Ho",
    "Dina Powell McCormick"
-  ]
- },
- "guests:84242623dddbce64": {
-  "date": "2026-09-17",
-  "value": [
-   "Satya Nadella",
-   "Logan Kilpatrick",
-   "Julian Emanuel",
-   "Bill Dudley",
-   "Ed Yardeni",
-   "Francis Fukuyama",
-   "Brad Gerstner",
-   "Michael Monahan",
-   "Steve Nison",
-   "Dean Curnutt",
-   "Robert Armstrong",
-   "Alice Han",
-   "Ed Zitron",
-   "Mark Zandi"
   ]
  },
  "guests:c147442f5ab1434d": {
@@ -207,6 +188,36 @@
     "sentiment": "bearish",
     "thesis": "Ali Ghodsi (Databricks CEO, Long Strange Trip) discusses beating Snowflake through Databricks' open format and claimed 3x TCO edge.",
     "ticker": "SNOW"
+   }
+  ]
+ },
+ "ideas:15165037c19152a6": {
+  "date": "2026-09-25",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Palo Alto Networks CEO Nikesh Arora expects well over 500 startups to chase agent security and highlights AI-driven attacks as a major security concern on CNBC's The Tech Download.",
+    "ticker": "PANW"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Okta CEO Todd McKinnon discusses identity becoming cyber's biggest category, projecting a $220B market opportunity within five to ten years on CNBC's Squawk on the Street.",
+    "ticker": "OKTA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Qualcomm CEO Cristiano Amon states the semiconductor supply chain is running at 100% capacity and highlights rising demand for on-device AI computing across smartphones, vehicles, and wearables on TBPN.",
+    "ticker": "QCOM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "CoreWeave EVP Chen Goldberg discusses the company's multi-rack Vera Rubin NVL72 deployment and AI infrastructure capabilities, positioning the company as a key AI infrastructure provider on The Neuron.",
+    "ticker": "CRWV"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Affirm CEO Max Levchin discusses the company's UK expansion with Amazon and breakthrough attention-based underwriting models on TBPN.",
+    "ticker": "AFFRM"
    }
   ]
  },
@@ -411,51 +422,6 @@
     "sentiment": "bullish",
     "thesis": "Dan Niles on RiskReversal Pod is bullish on Apple for 2025 driven by a foldable-phone upgrade cycle despite near-term execution risks.",
     "ticker": "AAPL"
-   }
-  ]
- },
- "ideas:dfe762f703aba7c6": {
-  "date": "2026-09-17",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Brad Gerstner on All-In Podcast believes NVIDIA at 14x next year's earnings is not a bubble, with the trade dependent on lab revenue roughly doubling and buildout executing, expecting closer to 25 gigawatts next year against a 43-gigawatt forecast.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dina Powell McCormick on All-In Podcast discusses Meta's data center investments and AI strategy, highlighting the company's glasses bet and workforce academy initiatives as part of Meta's future growth plans.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bearish",
-    "thesis": "Mustafa Suleyman, CEO of Microsoft AI, on Decoder podcast expresses concerns about AI alignment and containment risks, with critical views on Anthropic's approach to AI safety.",
-    "ticker": "MSFT"
-   }
-  ]
- },
- "ideas:e9614acc135fcaed": {
-  "date": "2026-09-17",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Satya Nadella on All-In discussed Microsoft's capital allocation across OpenAI, Anthropic and its own models, with emphasis on where AI profits land.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Logan Kilpatrick of Google DeepMind on The Pomp Podcast discussed Google's billion dollar bet to win the AI race through Gemini 4's massive pre-training run and frontier commitment.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Jeetu Patel, Cisco President and Chief Product Officer on MTS discussed Cisco's AI vulnerability-detection partnerships with Anthropic and OpenAI as a growth opportunity.",
-    "ticker": "CSCO"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Michael Monahan on Masters in Business discussed the Founders 100 ETF as a way for ordinary investors to access companies led by founders with strong returns potential.",
-    "ticker": "FFF"
    }
   ]
  }
