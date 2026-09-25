@@ -480,3 +480,12 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-25,control,PLTR,4.5,192.59,178.22,morning,18.3,67,7.5,Risk-on,bullish
 2026-09-25,control,HOOD,4.3,120.82,114.23,morning,16.2,59,5.5,Risk-on,bullish
 2026-09-25,control,HPE,4.6,63.52,56.84,morning,18.8,63,10.5,Risk-on,bullish
+2026-09-25,pick,BE,4.8,288.70,261.46,afternoon,25.7,63,9.4,Risk-on,bullish
+2026-09-25,pick,P,4.7,126.00,113.80,afternoon,31.2,71,9.7,Risk-on,bullish
+2026-09-25,pick,QCOM,4.6,201.97,189.22,afternoon,19.1,68,6.3,Risk-on,bullish
+2026-09-25,setup,MSFT,3.8,516.17,500.04,afternoon,8.6,63,3.1,Risk-on,bullish
+2026-09-25,setup,AKAM,3.6,113.94,113.27,afternoon,0.6,53,0.6,Risk-on,bullish
+2026-09-25,setup,CRWV,4.0,87.59,86.20,afternoon,2.1,51,1.6,Risk-on,bullish
+2026-09-25,control,MRNA,4.5,198.88,162.48,afternoon,80.6,76,18.3,Risk-on,bullish
+2026-09-25,control,ANET,4.3,206.55,196.58,afternoon,8.6,60,4.8,Risk-on,bullish
+2026-09-25,control,AMD,4.5,630.63,532.58,afternoon,24.9,73,15.5,Risk-on,bullish

@@ -47,6 +47,34 @@
    "Michael Gapen"
   ]
  },
+ "guests:5765edf8b12c6472": {
+  "date": "2026-09-25",
+  "value": [
+   "Satya Nadella",
+   "Tom Leighton",
+   "Durga Malladi",
+   "Marc Boroditsky",
+   "Ben Thompson",
+   "Chen Goldberg",
+   "Nikesh Arora",
+   "Cristiano Amon",
+   "Todd McKinnon",
+   "Boaz Barak",
+   "Michael Every",
+   "Michael Gapen",
+   "Lindsay Newman",
+   "Darius Dale",
+   "Karan Sood",
+   "Dave Iben",
+   "Alex Bores",
+   "Hayes Davenport",
+   "Howard Marks",
+   "Daniel Baer",
+   "Rachel Karten",
+   "Taylor Lorenz",
+   "Santiago Pena"
+  ]
+ },
  "guests:5c28d7f645ce2f11": {
   "date": "2026-09-22",
   "value": [
@@ -288,6 +316,46 @@
     "sentiment": "bullish",
     "thesis": "Dan Niles picked Cisco Systems in Pro Picks alongside Microsoft and Nvidia when last appearing in May 2025 on In the Money with Amber Kanwar.",
     "ticker": "CSCO"
+   }
+  ]
+ },
+ "ideas:30c4e387129f15e3": {
+  "date": "2026-09-25",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Satya Nadella on TMTB Podcast Intel: Microsoft is positioned in an agent market orders of magnitude bigger than cloud, with AI becoming core to business strategy.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Tom Leighton on TMTB Podcast Intel: Akamai secured $11.6B Anthropic deal and close to $15B of multiyear commitments, demonstrating strong demand for infrastructure services.",
+    "ticker": "AKAM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Chen Goldberg on TMTB Podcast Intel: CoreWeave is building critical GPU infrastructure with multi-rack Vera Rubin NVL72 deployments, positioned as Platinum tier cloud provider.",
+    "ticker": "CRWV"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Nikesh Arora on TMTB Podcast Intel: Palo Alto Networks is well-positioned in AI-driven security with agent security becoming a new $220B+ market category.",
+    "ticker": "PANW"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Cristiano Amon on TBPN and Durga Malladi on Semi Doped: Qualcomm's High Bandwidth Compute architecture and Dragonfly AI250 offer differentiated inference solution with 18x effective bandwidth advantage on TCO.",
+    "ticker": "QCOM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Todd McKinnon on CNBC Squawk on the Street: Okta is positioned to lead identity security for AI agents with kill switch capabilities, topping a $220B market within five to ten years.",
+    "ticker": "OKTA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Ben Thompson on TMTB Podcast Intel: Meta is entering a 'cool era' with Muse as aggregator of aggregators, positioning it well in AI competition.",
+    "ticker": "META"
    }
   ]
  },
