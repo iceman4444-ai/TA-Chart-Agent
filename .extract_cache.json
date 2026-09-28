@@ -1,26 +1,4 @@
 {
- "guests:03f28df6c4acc779": {
-  "date": "2026-09-18",
-  "value": [
-   "Ali Ghodsi",
-   "Dan Niles",
-   "Alex Karp",
-   "Noam Brown",
-   "Mustafa Suleyman",
-   "Richard Ho",
-   "Dina Powell McCormick",
-   "Brad Gerstner",
-   "Glen Kacher",
-   "Jared Isaacman",
-   "Vincent Deluard",
-   "Roger Ibbotson",
-   "Nick Bostrom",
-   "Owen Zidar",
-   "Eric Zwick",
-   "Nick Shirley",
-   "Harley Bassman"
-  ]
- },
  "guests:2939553151f36ef3": {
   "date": "2026-09-23",
   "value": [
@@ -88,17 +66,17 @@
    "Gabe Stengel"
   ]
  },
- "guests:789e9b5c89321242": {
-  "date": "2026-09-18",
+ "guests:693b2f097348d0a7": {
+  "date": "2026-09-28",
   "value": [
-   "Ali Ghodsi",
-   "Dan Niles",
-   "Alex Karp",
-   "Lihong Wang",
-   "Noam Brown",
-   "Mustafa Suleyman",
-   "Richard Ho",
-   "Dina Powell McCormick"
+   "Satya Nadella",
+   "Tom Leighton",
+   "Durga Malladi",
+   "Marc Boroditsky",
+   "Chen Goldberg",
+   "Nikesh Arora",
+   "Cristiano Amon",
+   "Todd McKinnon"
   ]
  },
  "guests:c147442f5ab1434d": {
@@ -182,41 +160,6 @@
    "Bob McNally",
    "Ulrike Hoffmann-Burchardi",
    "James Egelhof"
-  ]
- },
- "ideas:01fa02536feb40f6": {
-  "date": "2026-09-18",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Brad Gerstner (All-In Podcast) believes NVIDIA at 14x next year's earnings is not a bubble, supported by lab revenue roughly doubling and buildout executing, though he expects closer to 25 gigawatts next year against a 43-gigawatt forecast.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles (RiskReversal) views Meta as a dark-horse beneficiary of AI spending via consumer distribution.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles (RiskReversal) sees Microsoft's advantage through its OpenAI stake and security-focused Copilot in the AI buildout.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles (RiskReversal) expects Google to reassert AI leadership due to its data and cloud acceleration capabilities.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles (RiskReversal) is bullish on Apple for 2025 driven by a foldable-phone upgrade cycle, despite near-term execution risks.",
-    "ticker": "AAPL"
-   },
-   {
-    "sentiment": "bearish",
-    "thesis": "Ali Ghodsi (Databricks CEO, Long Strange Trip) discusses beating Snowflake through Databricks' open format and claimed 3x TCO edge.",
-    "ticker": "SNOW"
-   }
   ]
  },
  "ideas:15165037c19152a6": {
@@ -316,6 +259,51 @@
     "sentiment": "bullish",
     "thesis": "Dan Niles picked Cisco Systems in Pro Picks alongside Microsoft and Nvidia when last appearing in May 2025 on In the Money with Amber Kanwar.",
     "ticker": "CSCO"
+   }
+  ]
+ },
+ "ideas:2fd8e5c35eedd51a": {
+  "date": "2026-09-28",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Microsoft CEO Satya Nadella on TMTB Podcast discusses the agent market as orders of magnitude bigger than cloud, positioning Microsoft favorably in this emerging opportunity.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Akamai CEO Tom Leighton on CNBC's Squawk on the Street discusses the $11.6B Anthropic deal and close to $15B of multiyear commitments, indicating strong business momentum.",
+    "ticker": "AKAM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Qualcomm EVP Durga Malladi on Semi Doped explains the Dragonfly AI250's technical differentiation with 18x effective bandwidth and competitive TCO advantages in data center inference.",
+    "ticker": "QCOM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Ben Thompson on Sharp Tech discusses Meta's cool era and Muse as the aggregator of aggregators, suggesting positive momentum for the company.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Palo Alto Networks CEO Nikesh Arora on CNBC's The Tech Download expects well over 500 startups to chase agent security, indicating a large market opportunity for PANW's security solutions.",
+    "ticker": "PANW"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Okta CEO Todd McKinnon on CNBC's Squawk on the Street discusses identity topping a $220B market within five to ten years, suggesting strong long-term growth potential.",
+    "ticker": "OKTA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Scott Galloway on Prof G Markets remains bullish on Netflix stock despite its recent decline.",
+    "ticker": "NFLX"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "CoreWeave EVP Chen Goldberg on The Neuron discusses the multi-rack Vera Rubin NVL72 deployment and infrastructure innovations that make AI infrastructure accessible, indicating strong positioning.",
+    "ticker": "CRWV"
    }
   ]
  },
@@ -462,35 +450,5 @@
  "ideas:cc1381f2673f3cb5": {
   "date": "2026-09-24",
   "value": []
- },
- "ideas:d5637595a028ffcc": {
-  "date": "2026-09-18",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Brad Gerstner on All-In Podcast argues NVIDIA at 14x next year's earnings is no bubble, though the trade depends on lab revenue roughly doubling and buildout executing at closer to 25 gigawatts next year against a 43-gigawatt forecast.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod views Meta as a dark-horse beneficiary of AI via consumer distribution and strong data capabilities.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod expects Google to reassert leadership due to data and cloud acceleration advantages.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod outlines Microsoft's advantage through its OpenAI stake and security-focused Copilot positioning.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod is bullish on Apple for 2025 driven by a foldable-phone upgrade cycle despite near-term execution risks.",
-    "ticker": "AAPL"
-   }
-  ]
  }
 }

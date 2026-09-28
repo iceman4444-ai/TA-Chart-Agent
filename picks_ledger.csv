@@ -489,3 +489,13 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-25,control,MRNA,4.5,198.88,162.48,afternoon,80.6,76,18.3,Risk-on,bullish
 2026-09-25,control,ANET,4.3,206.55,196.58,afternoon,8.6,60,4.8,Risk-on,bullish
 2026-09-25,control,AMD,4.5,630.63,532.58,afternoon,24.9,73,15.5,Risk-on,bullish
+2026-09-28,pick,BE,4.8,288.70,261.46,morning,25.7,63,9.4,Risk-on,bullish
+2026-09-28,pick,INTC,4.8,123.00,118.34,morning,24.2,67,3.8,Risk-on,bullish
+2026-09-28,pick,SWKS,4.8,89.34,83.05,morning,24.5,62,7.0,Risk-on,bullish
+2026-09-28,pick,P,4.7,126.00,113.80,morning,31.2,71,9.7,Risk-on,bullish
+2026-09-28,setup,MSFT,3.8,516.17,500.04,morning,8.6,63,3.1,Risk-on,bullish
+2026-09-28,setup,AKAM,3.6,113.94,113.27,morning,0.6,53,0.6,Risk-on,bullish
+2026-09-28,setup,META,4.5,751.66,718.35,morning,22.2,71,4.4,Risk-on,bullish
+2026-09-28,control,DHR,4.4,224.49,224.41,morning,9.0,69,0.0,Risk-on,bullish
+2026-09-28,control,AMD,4.5,630.63,532.62,morning,24.9,73,15.5,Risk-on,bullish
+2026-09-28,control,AAPL,4.2,341.07,329.40,morning,6.0,66,3.4,Risk-on,bullish
