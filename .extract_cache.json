@@ -79,6 +79,19 @@
    "Todd McKinnon"
   ]
  },
+ "guests:beea2abf5c97e7eb": {
+  "date": "2026-09-28",
+  "value": [
+   "Satya Nadella",
+   "Tom Leighton",
+   "Durga Malladi",
+   "Marc Boroditsky",
+   "Ben Thompson",
+   "Chen Goldberg",
+   "Nikesh Arora",
+   "Cristiano Amon"
+  ]
+ },
  "guests:c147442f5ab1434d": {
   "date": "2026-09-24",
   "value": [
@@ -160,6 +173,46 @@
    "Bob McNally",
    "Ulrike Hoffmann-Burchardi",
    "James Egelhof"
+  ]
+ },
+ "ideas:001b9eaa58430b6d": {
+  "date": "2026-09-28",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Microsoft CEO Satya Nadella views the agent market as orders of magnitude bigger than cloud, positioning the company favorably for AI infrastructure expansion per TMTB Podcast Intel.",
+    "ticker": "MSFT"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Akamai CEO Tom Leighton highlighted $11.6B Anthropic deal and close to $15B of multiyear commitments, indicating strong enterprise infrastructure demand per TMTB Podcast Intel.",
+    "ticker": "AKAM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Qualcomm EVP Durga Malladi emphasized the Dragonfly AI250's 18x effective bandwidth advantage and winning on TCO in data center inference, positioning competitive differentiation per Semi Doped.",
+    "ticker": "QCOM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Ben Thompson noted Meta's 'cool era' with Muse as an aggregator platform, suggesting positive momentum per TMTB Podcast Intel.",
+    "ticker": "META"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Palo Alto Networks CEO Nikesh Arora expects well over 500 startups to chase agent security, positioning the company to capture growing security demand in the AI era per TMTB Podcast Intel.",
+    "ticker": "PANW"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Okta CEO Todd McKinnon discussed identity becoming cyber's biggest category topping a $220B market within five to ten years, with expanded kill switch capabilities for AI agents per TMTB Podcast Intel.",
+    "ticker": "OKTA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Scott Galloway on Prof G Markets stated he remains bullish on Netflix stock despite its recent decline this year.",
+    "ticker": "NFLX"
+   }
   ]
  },
  "ideas:15165037c19152a6": {

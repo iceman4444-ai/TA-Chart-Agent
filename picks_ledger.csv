@@ -499,3 +499,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-28,control,DHR,4.4,224.49,224.41,morning,9.0,69,0.0,Risk-on,bullish
 2026-09-28,control,AMD,4.5,630.63,532.62,morning,24.9,73,15.5,Risk-on,bullish
 2026-09-28,control,AAPL,4.2,341.07,329.40,morning,6.0,66,3.4,Risk-on,bullish
+2026-09-28,pick,AMD,4.8,607.87,535.22,afternoon,19.9,66,12.0,Risk-on,bullish
+2026-09-28,pick,MSTR,4.6,157.14,153.00,afternoon,32.2,62,2.6,Risk-on,bullish
+2026-09-28,control,SNDK,4.4,1712.89,1675.18,afternoon,12.4,53,2.2,Risk-on,bullish
+2026-09-28,control,CRWD,4.5,259.25,232.33,afternoon,21.3,65,10.4,Risk-on,bullish
+2026-09-28,control,STX,4.3,921.51,853.03,afternoon,8.2,59,7.4,Risk-on,bullish
