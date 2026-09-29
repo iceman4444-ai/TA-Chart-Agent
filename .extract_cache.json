@@ -149,30 +149,17 @@
    "Owen Zidar"
   ]
  },
- "guests:e2a6f08dd9c2d7ae": {
-  "date": "2026-09-21",
+ "guests:f50d4e6e6ee0c4bb": {
+  "date": "2026-09-29",
   "value": [
-   "Ali Ghodsi",
-   "Dan Niles",
-   "Alex Karp",
-   "Todd McShay",
-   "Diana Taurasi",
-   "Charles Barkley",
-   "Tom Mueller",
-   "Chris Power"
-  ]
- },
- "guests:ffa4440a164b3809": {
-  "date": "2026-09-21",
-  "value": [
-   "Adam Foroughi",
-   "Mark Wade",
-   "Thomas Sohmers",
-   "Vlad Tenev",
-   "Tulsee Doshi",
-   "Bob McNally",
-   "Ulrike Hoffmann-Burchardi",
-   "James Egelhof"
+   "Noah Shinn",
+   "Jensen Huang",
+   "Mike Cannon-Brookes",
+   "Matthew Prince",
+   "Sam Badri",
+   "Koray Kavukcuoglu",
+   "Daniel Ek",
+   "Edward Yardeni"
   ]
  },
  "ideas:001b9eaa58430b6d": {
@@ -242,76 +229,6 @@
     "sentiment": "bullish",
     "thesis": "Affirm CEO Max Levchin discusses the company's UK expansion with Amazon and breakthrough attention-based underwriting models on TBPN.",
     "ticker": "AFFRM"
-   }
-  ]
- },
- "ideas:1a94de5b91a71af5": {
-  "date": "2026-09-21",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "AppLovin CEO Adam Foroughi on All-In podcast highlighted the $50B mobile gaming ad market growing 60% annually, a buyback program that retired 20-25% of shares for $6B, and an 84% EBITDA margin as a competitive moat.",
-    "ticker": "APP"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Google's Gemini product development was discussed on The Skip podcast, with product lead Tulsee Doshi noting Gemini 4 in development with strong internal momentum and focus on live-experiment behavior shifts as key shipping metrics.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Robinhood CEO Vlad Tenev on Moonshots podcast discussed the company's blockchain initiatives with 200 stock tokens and $1B+ daily DEX volume, plus 100,000+ accounts running AI trading agents.",
-    "ticker": "HOOD"
-   }
-  ]
- },
- "ideas:1e1b614f0f1b4636": {
-  "date": "2026-09-21",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod views Meta as a dark-horse beneficiary in AI due to consumer distribution and sees it as an AI comeback story in In the Money with Amber Kanwar.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod explains Microsoft's advantage through its OpenAI stake and security-focused Copilot, and picked it in May 2025 on In the Money with Amber Kanwar.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod expects Google to reassert leadership due to data and cloud acceleration.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on RiskReversal Pod outlines a bullish 2025 view driven by a foldable-phone upgrade cycle despite near-term execution risks.",
-    "ticker": "AAPL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on In the Money with Amber Kanwar explains Nvidia may be in a different category from some of the more speculative AI infrastructure plays and included it in Pro Picks.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bearish",
-    "thesis": "Dan Niles on In the Money with Amber Kanwar isn't convinced Snowflake will escape AI disruption.",
-    "ticker": "SNOW"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles on In the Money with Amber Kanwar prefers Marvell Technology to Celestica.",
-    "ticker": "MRVL"
-   },
-   {
-    "sentiment": "bearish",
-    "thesis": "Dan Niles on In the Money with Amber Kanwar prefers Marvell to Celestica as a neo-cloud play.",
-    "ticker": "CLS"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Dan Niles picked Cisco Systems in Pro Picks alongside Microsoft and Nvidia when last appearing in May 2025 on In the Money with Amber Kanwar.",
-    "ticker": "CSCO"
    }
   ]
  },
@@ -427,6 +344,36 @@
     "sentiment": "bullish",
     "thesis": "Vlad Tenev, Robinhood CEO, discussed the company's Robinhood Chain with 200 stock tokens, $1B+ daily DEX volume, and 100,000+ accounts running AI trading agents on Moonshots podcast.",
     "ticker": "HOOD"
+   }
+  ]
+ },
+ "ideas:4badafae8394ad8f": {
+  "date": "2026-09-29",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Jensen Huang, NVIDIA CEO on CNBC's Squawk Box, discussed the company's share buyback and open agent safety platform, positioning NVIDIA as a leader in AI infrastructure and governance.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Atlassian CEO Mike Cannon-Brookes on Decoder stated that MCP users are expanding Atlassian spend twice as fast and the company is reshaping around AI, countering SaaS apocalypse narratives.",
+    "ticker": "TEAM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Cloudflare CEO Matthew Prince on Decoder discussed bots overtaking human traffic and pay-per-crawl models via HTTP 402, indicating new revenue opportunities from changing internet dynamics.",
+    "ticker": "NET"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Cisco Head of IR Sam Badri on The Real Eisman Playbook indicated growth accelerating from 5% to 18% and noted 90% of AI users are still at basic prompting stage, suggesting significant runway for enterprise adoption.",
+    "ticker": "CSCO"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Scott Galloway on Prof G Markets stated he remains bullish on Netflix despite recent stock decline, suggesting undervaluation at current levels.",
+    "ticker": "NFLX"
    }
   ]
  },
