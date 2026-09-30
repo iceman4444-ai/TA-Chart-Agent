@@ -53,19 +53,6 @@
    "Santiago Pena"
   ]
  },
- "guests:5c28d7f645ce2f11": {
-  "date": "2026-09-22",
-  "value": [
-   "Adam Foroughi",
-   "Mark Wade",
-   "Thomas Sohmers",
-   "Vlad Tenev",
-   "Tulsee Doshi",
-   "Blake Scholl",
-   "Naveen Rao",
-   "Gabe Stengel"
-  ]
- },
  "guests:693b2f097348d0a7": {
   "date": "2026-09-28",
   "value": [
@@ -77,6 +64,19 @@
    "Nikesh Arora",
    "Cristiano Amon",
    "Todd McKinnon"
+  ]
+ },
+ "guests:a08c02dc4ab306c3": {
+  "date": "2026-09-30",
+  "value": [
+   "Thariq Shihipar",
+   "Dev Ittycheria",
+   "Anish Acharya",
+   "David Pawlan",
+   "Noah Shinn",
+   "Jensen Huang",
+   "Mike Cannon-Brookes",
+   "Matthew Prince"
   ]
  },
  "guests:beea2abf5c97e7eb": {
@@ -392,6 +392,41 @@
    }
   ]
  },
+ "ideas:9294ccd8d13fb3d7": {
+  "date": "2026-09-30",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Jensen Huang on Squawk Box discussed NVIDIA's open agent safety platform and share buyback program, signaling confidence in the company's AI leadership position.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Atlassian CEO Mike Cannon-Brookes on Decoder noted that MCP users are expanding Atlassian spend twice as fast and the company is reshaping around AI opportunities.",
+    "ticker": "TEAM"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Cloudflare CEO Matthew Prince on Decoder highlighted the company's positioning around bots overtaking human traffic and innovative HTTP 402 pay-per-crawl model.",
+    "ticker": "NET"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Cisco's Head of IR Sam Badri on The Real Eisman Playbook reported growth accelerating from 5% to 18% and strong positioning with hyperscalers in AI infrastructure.",
+    "ticker": "CSCO"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "MongoDB Interim CEO Dev Ittycheria on Squawk on the Street discussed the company's competitive positioning and search for a successor following CJ Desai's departure to Meta.",
+    "ticker": "MDB"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Micron's upcoming earnings discussed on The Deep End featured gross margins near 85% and $100B of strategic customer agreements amid cyclical market dynamics.",
+    "ticker": "MU"
+   }
+  ]
+ },
  "ideas:ab432e49ea7d4c0c": {
   "date": "2026-09-23",
   "value": [
@@ -419,31 +454,6 @@
     "sentiment": "neutral",
     "thesis": "Animal Spirits Podcast episode 483 discusses Nvidia's valuation as a chart-of-the-year candidate amid interconnected hyperscalers and AI's economic risk.",
     "ticker": "NVDA"
-   }
-  ]
- },
- "ideas:acc2c12d85c0cc60": {
-  "date": "2026-09-22",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "AppLovin CEO Adam Foroughi highlighted the $50B mobile-gaming ad market growing 60% annually, 84% EBITDA margins as a moat, and a buyback program that has retired 20-25% of shares, per All-In podcast.",
-    "ticker": "APP"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Google's Gemini product development is advancing with Gemini 4 in development and strong internal momentum, per The Skip podcast.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Meta's new AI product strategy positions the company to quietly win the AI race with smart product moves, per Prof G Markets.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Robinhood CEO Vlad Tenev discussed Robinhood Chain's 200 stock tokens with $1B+ daily DEX volume, 7M Trump Accounts opened, and 100K+ AI trading agent accounts, per Moonshots podcast.",
-    "ticker": "HOOD"
    }
   ]
  },
