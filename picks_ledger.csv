@@ -529,3 +529,7 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-30,control,ILMN,4.4,272.00,239.73,morning,27.0,74,11.9,Risk-on,bullish
 2026-09-30,control,APH,4.4,84.34,81.97,morning,4.6,59,2.8,Risk-on,bullish
 2026-09-30,control,KEYS,4.3,360.65,335.95,morning,8.9,65,6.8,Risk-on,bullish
+2026-09-30,pick,ALAB,4.7,355.97,346.07,afternoon,15.7,61,2.8,Risk-on,bullish
+2026-09-30,pick,CRWD,4.6,264.75,236.40,afternoon,22.3,67,10.7,Risk-on,bullish
+2026-09-30,control,LITE,4.5,971.26,921.06,afternoon,11.7,57,5.2,Risk-on,bullish
+2026-09-30,control,FTNT,4.3,178.76,168.25,afternoon,9.9,62,5.9,Risk-on,bullish
