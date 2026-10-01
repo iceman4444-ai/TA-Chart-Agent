@@ -1,17 +1,4 @@
 {
- "guests:2939553151f36ef3": {
-  "date": "2026-09-23",
-  "value": [
-   "Demis Hassabis",
-   "Neal Mohan",
-   "Houda Nait El Barj",
-   "Ben Thompson",
-   "Mark Russinovich",
-   "Marc Benioff",
-   "Vinod Khosla",
-   "Gabe Stengel"
-  ]
- },
  "guests:39969ed0a5c4c4ed": {
   "date": "2026-09-25",
   "value": [
@@ -66,6 +53,19 @@
    "Todd McKinnon"
   ]
  },
+ "guests:9ed4026244498d3c": {
+  "date": "2026-10-01",
+  "value": [
+   "Sam Altman",
+   "Sarah Friar",
+   "Michael Intrator",
+   "Christian Klein",
+   "Daniel Ek",
+   "David Rosenberg",
+   "Neel Kashkari",
+   "Libby Cantrill"
+  ]
+ },
  "guests:a08c02dc4ab306c3": {
   "date": "2026-09-30",
   "value": [
@@ -103,37 +103,6 @@
    "Vasile Tofan",
    "Rachel Karten",
    "Taylor Lorenz"
-  ]
- },
- "guests:cfa39cdbe7606097": {
-  "date": "2026-09-23",
-  "value": [
-   "Marc Benioff",
-   "Gabe Stengel",
-   "Vinod Khosla",
-   "Diogo Almeida",
-   "Naveen Rao",
-   "Adam Foroughi",
-   "Mark Wade",
-   "Vlad Tenev",
-   "Tulsee Doshi",
-   "Gargi Chaudhuri",
-   "David Rubenstein",
-   "Lauren Saidel-Baker",
-   "Matt Luzzetti",
-   "Aaron Kennon",
-   "Amos Hochstein",
-   "Juan Londo\u00f1o",
-   "Matt Smith",
-   "Jonathan Cohen",
-   "Steve Hilton",
-   "Spencer Pratt",
-   "Blake Scholl",
-   "Rohan Goswami",
-   "Conor Sen",
-   "Bill Mann",
-   "Tom Mueller",
-   "Chris Power"
   ]
  },
  "guests:d887da08eedee32a": {
@@ -317,36 +286,6 @@
    }
   ]
  },
- "ideas:3ff1f5b27052a310": {
-  "date": "2026-09-23",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Marc Benioff, Salesforce CEO, emphasized Slack's increased importance in the age of AI agents and discussed the company's role in the Hugging Face acquisition on TMTB Podcast Intel.",
-    "ticker": "CRM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Adam Foroughi, AppLovin CEO, highlighted the roughly $50B mobile-gaming ad market with AppLovin's platform growing about 60% a year and an 84% EBITDA margin on All-In podcast.",
-    "ticker": "APP"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Tulsee Doshi, product lead for Google's Gemini models, discussed Gemini 4 in development with internal hype building on The Skip podcast.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Robinhood CEO Vlad Tenev highlighted Meta's involvement in AI trading through Robinhood Ventures funds on Moonshots podcast.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Vlad Tenev, Robinhood CEO, discussed the company's Robinhood Chain with 200 stock tokens, $1B+ daily DEX volume, and 100,000+ accounts running AI trading agents on Moonshots podcast.",
-    "ticker": "HOOD"
-   }
-  ]
- },
  "ideas:4badafae8394ad8f": {
   "date": "2026-09-29",
   "value": [
@@ -427,38 +366,33 @@
    }
   ]
  },
- "ideas:ab432e49ea7d4c0c": {
-  "date": "2026-09-23",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "YouTube CEO Neal Mohan on Big Technology Podcast says AI now sits under creation, discovery and search with Gemini-powered tools, and AI-made content gets no penalty or favor, only audience decides, positioning Google for AI-driven creator and discovery tools.",
-    "ticker": "GOOGL"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Salesforce CEO Marc Benioff on Sources with Alex Heath says Slack matters more in the age of agents and the wealth from Anthropic and OpenAI IPOs is creating significant industry opportunities.",
-    "ticker": "CRM"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Vinod Khosla on TBPN notes that Amazon blocked Meta's Muse personal agent, highlighting platform conflicts but indicating Meta is competing in the agent market that Khosla sees as broad and non-winner-take-all.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Ben Thompson on TBPN with John Coogan and Jordi Hays argues that Amazon's delivery certainty and returns beat Shopify's asset-light model once an agent does the buying, giving Amazon a logistics moat.",
-    "ticker": "AMZN"
-   },
-   {
-    "sentiment": "neutral",
-    "thesis": "Animal Spirits Podcast episode 483 discusses Nvidia's valuation as a chart-of-the-year candidate amid interconnected hyperscalers and AI's economic risk.",
-    "ticker": "NVDA"
-   }
-  ]
- },
  "ideas:cc1381f2673f3cb5": {
   "date": "2026-09-24",
   "value": []
+ },
+ "ideas:da190d869a501a72": {
+  "date": "2026-10-01",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "CoreWeave CEO Michael Intrator highlighted Cognition as the first production customer on Vera Rubin, demonstrating strong demand for the company's data center infrastructure and GPU compute services, per CNBC's Squawk on the Street.",
+    "ticker": "CRWV"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "SAP CEO Christian Klein indicated that the company maintains a competitive moat as AI models improve, with enterprise software still critical for mission-critical business tasks, per Big Technology Podcast.",
+    "ticker": "SAP"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "John Kartsonas, founder and managing partner at Breakwave Partners, noted that his firm is managing the world's top performing ETF of 2026 (BWET) while analyzing geopolitical activity in the Strait of Hormuz, per Bloomberg Surveillance.",
+    "ticker": "BWET"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Spotify co-founder Daniel Ek discussed the company's position on open versus closed AI models and compute regulation concerns, per All-In podcast.",
+    "ticker": "SPOT"
+   }
+  ]
  }
 }

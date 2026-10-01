@@ -533,3 +533,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-09-30,pick,CRWD,4.6,264.75,236.40,afternoon,22.3,67,10.7,Risk-on,bullish
 2026-09-30,control,LITE,4.5,971.26,921.06,afternoon,11.7,57,5.2,Risk-on,bullish
 2026-09-30,control,FTNT,4.3,178.76,168.25,afternoon,9.9,62,5.9,Risk-on,bullish
+2026-10-01,pick,AMD,4.8,611.76,549.67,morning,19.9,66,10.1,Risk-on,bullish
+2026-10-01,pick,INTC,4.8,120.23,118.34,morning,20.1,62,1.6,Risk-on,bullish
+2026-10-01,pick,ALAB,4.7,355.97,346.07,morning,15.7,61,2.8,Risk-on,bullish
+2026-10-01,pick,BE,4.7,276.98,266.52,morning,18.6,56,3.8,Risk-on,bullish
+2026-10-01,pick,CRWD,4.6,264.75,236.40,morning,22.3,67,10.7,Risk-on,bullish
+2026-10-01,setup,CRWV,3.9,87.12,86.56,morning,0.8,50,0.6,Risk-on,bullish
+2026-10-01,setup,SAP,2.7,208.48,204.00,morning,2.2,49,2.1,Risk-on,bullish
+2026-10-01,setup,BWET,4.5,803.00,688.81,morning,67.6,64,14.2,Risk-on,bullish
+2026-10-01,control,META,4.6,725.18,718.35,morning,16.9,61,0.9,Risk-on,bullish
+2026-10-01,control,ADI,4.3,396.71,385.78,morning,6.2,63,2.8,Risk-on,bullish
+2026-10-01,control,ILMN,4.5,273.68,240.64,morning,26.8,75,12.1,Risk-on,bullish
