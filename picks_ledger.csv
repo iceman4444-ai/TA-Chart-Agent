@@ -544,3 +544,7 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-01,control,META,4.6,725.18,718.35,morning,16.9,61,0.9,Risk-on,bullish
 2026-10-01,control,ADI,4.3,396.71,385.78,morning,6.2,63,2.8,Risk-on,bullish
 2026-10-01,control,ILMN,4.5,273.68,240.64,morning,26.8,75,12.1,Risk-on,bullish
+2026-10-01,pick,HPE,4.9,64.58,59.57,afternoon,17.0,63,7.8,Risk-on,bullish
+2026-10-01,setup,MU,4.4,1097.39,1032.17,afternoon,15.0,64,5.9,Risk-on,bullish
+2026-10-01,control,NVDA,4.3,230.86,223.46,afternoon,6.1,60,3.2,Risk-on,bullish
+2026-10-01,control,TER,4.5,415.79,385.48,afternoon,11.4,62,7.3,Risk-on,bullish

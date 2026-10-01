@@ -53,6 +53,19 @@
    "Todd McKinnon"
   ]
  },
+ "guests:76f0d047d003f86d": {
+  "date": "2026-10-01",
+  "value": [
+   "Sanjay Mehrotra",
+   "Vis Valluri",
+   "Sam Altman",
+   "Brian Chesky",
+   "Ming-Yu Liu",
+   "David Rosenberg",
+   "Neel Kashkari",
+   "Libby Cantrill"
+  ]
+ },
  "guests:9ed4026244498d3c": {
   "date": "2026-10-01",
   "value": [
@@ -198,6 +211,26 @@
     "sentiment": "bullish",
     "thesis": "Affirm CEO Max Levchin discusses the company's UK expansion with Amazon and breakthrough attention-based underwriting models on TBPN.",
     "ticker": "AFFRM"
+   }
+  ]
+ },
+ "ideas:16bf0b822a822e36": {
+  "date": "2026-10-01",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Micron CEO Sanjay Mehrotra highlighted a blowout quarter with 26 strategic customer agreements stretching to 2031 and tighter supply in 2027-2028 on CNBC's Squawk on the Street, suggesting strong demand visibility.",
+    "ticker": "MU"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "John Kartsonas, founder and managing partner at Breakwave Partners, discussed managing the world's top performing ETF of 2026 (BWET) while understanding geopolitical shipping activity in the Strait of Hormuz on Bloomberg Surveillance.",
+    "ticker": "BWET"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "David Rosenberg discussed the ROSY ETF on Macro Voices, though his specific view on the fund's outlook was not explicitly detailed in the excerpt.",
+    "ticker": "ROSY"
    }
   ]
  },
