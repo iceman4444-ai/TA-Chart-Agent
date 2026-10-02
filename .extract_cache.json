@@ -1,4 +1,17 @@
 {
+ "guests:1c9c96905e0dbde5": {
+  "date": "2026-10-02",
+  "value": [
+   "Steve Eisman",
+   "David Rosenberg",
+   "David Kang",
+   "Seema Shah",
+   "Michael Haigh",
+   "Jeffrey Rosenberg",
+   "Claudia Sahm",
+   "Rebecca Patterson"
+  ]
+ },
  "guests:39969ed0a5c4c4ed": {
   "date": "2026-09-25",
   "value": [
@@ -103,32 +116,6 @@
    "Chen Goldberg",
    "Nikesh Arora",
    "Cristiano Amon"
-  ]
- },
- "guests:c147442f5ab1434d": {
-  "date": "2026-09-24",
-  "value": [
-   "Michael Every",
-   "Howard Marks",
-   "Daniel Baer",
-   "Elizabeth Economy",
-   "Michael Froman",
-   "Vasile Tofan",
-   "Rachel Karten",
-   "Taylor Lorenz"
-  ]
- },
- "guests:d887da08eedee32a": {
-  "date": "2026-09-24",
-  "value": [
-   "Howard Marks",
-   "Elizabeth Economy",
-   "Michael Froman",
-   "Vasile Tofan",
-   "Rachel Karten",
-   "Taylor Lorenz",
-   "Luca Ferrari",
-   "Owen Zidar"
   ]
  },
  "guests:f50d4e6e6ee0c4bb": {
@@ -349,18 +336,38 @@
    }
   ]
  },
- "ideas:4bc9e777885a6306": {
-  "date": "2026-09-24",
+ "ideas:5999b2017bb4bdf4": {
+  "date": "2026-10-02",
   "value": [
    {
-    "sentiment": "neutral",
-    "thesis": "Animal Spirits Podcast discusses Meta's personal assistant as part of broader AI capabilities discussion.",
-    "ticker": "META"
+    "sentiment": "bearish",
+    "thesis": "Steve Eisman on The Real Eisman Playbook is shorting FICO due to concerns about off-balance sheet financing and accounting practices in the AI era.",
+    "ticker": "FICO"
    },
    {
-    "sentiment": "neutral",
-    "thesis": "Animal Spirits Podcast mentions Nvidia's valuation as part of discussion on interconnected hyperscalers and AI's risk to the economy.",
-    "ticker": "NVDA"
+    "sentiment": "bullish",
+    "thesis": "Meb Faber on The Meb Faber Show highlights Cambria Shareholder Yield ETF for disciplined exposure to companies returning cash through dividends and buybacks.",
+    "ticker": "SYLD"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meb Faber on The Meb Faber Show discusses Cambria Foreign Shareholder Yield ETF as part of the shareholder yield suite emphasizing global dividend and buyback discipline.",
+    "ticker": "FYLD"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meb Faber on The Meb Faber Show includes Cambria Emerging Shareholder Yield ETF in the shareholder yield suite for emerging market exposure focused on cash returns.",
+    "ticker": "EYLD"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meb Faber on The Meb Faber Show presents Cambria Micro & SmallCap Shareholder Yield ETF as part of the shareholder yield discipline across market capitalizations.",
+    "ticker": "MYLD"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Meb Faber on The Meb Faber Show features Cambria Large Cap Shareholder Yield ETF in the shareholder yield strategy emphasizing large-cap dividend and buyback discipline.",
+    "ticker": "LYLD"
    }
   ]
  },
@@ -398,10 +405,6 @@
     "ticker": "MU"
    }
   ]
- },
- "ideas:cc1381f2673f3cb5": {
-  "date": "2026-09-24",
-  "value": []
  },
  "ideas:da190d869a501a72": {
   "date": "2026-10-01",

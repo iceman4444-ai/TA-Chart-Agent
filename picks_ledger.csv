@@ -548,3 +548,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-01,setup,MU,4.4,1097.39,1032.17,afternoon,15.0,64,5.9,Risk-on,bullish
 2026-10-01,control,NVDA,4.3,230.86,223.46,afternoon,6.1,60,3.2,Risk-on,bullish
 2026-10-01,control,TER,4.5,415.79,385.48,afternoon,11.4,62,7.3,Risk-on,bullish
+2026-10-02,pick,HPE,4.9,64.58,59.57,morning,17.0,63,7.8,Risk-on,bullish
+2026-10-02,pick,ALAB,4.8,356.42,346.07,morning,15.6,61,2.9,Risk-on,bullish
+2026-10-02,pick,AMD,4.8,615.73,557.60,morning,20.3,67,9.4,Risk-on,bullish
+2026-10-02,pick,CRWD,4.8,266.09,239.53,morning,22.0,67,10.0,Risk-on,bullish
+2026-10-02,pick,INTC,4.8,120.00,118.34,morning,19.4,62,1.4,Risk-on,bullish
+2026-10-02,setup,FICO,1.2,661.75,586.05,morning,-36.3,26,11.4,Risk-on,bearish
+2026-10-02,setup,SYLD,2.1,81.12,80.72,morning,-3.7,32,0.5,Risk-on,bullish
+2026-10-02,setup,FYLD,2.7,39.31,39.14,morning,-1.5,35,0.4,Risk-on,bullish
+2026-10-02,control,PANW,4.5,396.25,367.40,morning,10.0,60,7.3,Risk-on,bullish
+2026-10-02,control,MRNA,4.6,188.94,168.25,morning,56.2,66,10.9,Risk-on,bullish
+2026-10-02,control,MU,4.4,1097.39,1032.17,morning,15.0,64,5.9,Risk-on,bullish
