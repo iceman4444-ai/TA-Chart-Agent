@@ -565,3 +565,12 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-02,control,KEYS,4.5,384.40,345.11,afternoon,15.1,74,10.2,Risk-on,bullish
 2026-10-02,control,GLW,4.6,164.23,159.57,afternoon,7.5,57,2.8,Risk-on,bullish
 2026-10-02,control,NBIS,4.4,242.81,229.51,afternoon,10.9,57,5.5,Risk-on,bullish
+2026-10-05,pick,HPE,5.0,68.36,61.14,afternoon,22.0,67,10.6,Risk-on,bullish
+2026-10-05,pick,TER,4.9,444.53,424.55,afternoon,18.0,68,4.5,Risk-on,bullish
+2026-10-05,pick,AMD,4.8,631.75,574.20,afternoon,22.5,69,9.1,Risk-on,bullish
+2026-10-05,pick,LITE,4.8,1091.67,952.25,afternoon,23.3,67,12.8,Risk-on,bullish
+2026-10-05,pick,PANW,4.8,406.76,374.64,afternoon,11.9,64,7.9,Risk-on,bullish
+2026-10-05,setup,NFLX,1.7,67.50,65.08,afternoon,-10.6,33,3.6,Risk-on,bullish
+2026-10-05,control,MTD,4.4,1541.63,1429.33,afternoon,9.1,66,7.3,Risk-on,bullish
+2026-10-05,control,APH,4.4,87.27,82.07,afternoon,7.4,65,6.0,Risk-on,bullish
+2026-10-05,control,MRVL,4.5,271.25,268.64,afternoon,18.8,64,1.0,Risk-on,bullish

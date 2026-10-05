@@ -12,47 +12,6 @@
    "Rebecca Patterson"
   ]
  },
- "guests:39969ed0a5c4c4ed": {
-  "date": "2026-09-25",
-  "value": [
-   "Chen Goldberg",
-   "Nikesh Arora",
-   "Cristiano Amon",
-   "Todd McKinnon",
-   "Boaz Barak",
-   "Peter Tchir",
-   "Santiago Pena",
-   "Michael Gapen"
-  ]
- },
- "guests:5765edf8b12c6472": {
-  "date": "2026-09-25",
-  "value": [
-   "Satya Nadella",
-   "Tom Leighton",
-   "Durga Malladi",
-   "Marc Boroditsky",
-   "Ben Thompson",
-   "Chen Goldberg",
-   "Nikesh Arora",
-   "Cristiano Amon",
-   "Todd McKinnon",
-   "Boaz Barak",
-   "Michael Every",
-   "Michael Gapen",
-   "Lindsay Newman",
-   "Darius Dale",
-   "Karan Sood",
-   "Dave Iben",
-   "Alex Bores",
-   "Hayes Davenport",
-   "Howard Marks",
-   "Daniel Baer",
-   "Rachel Karten",
-   "Taylor Lorenz",
-   "Santiago Pena"
-  ]
- },
  "guests:693b2f097348d0a7": {
   "date": "2026-09-28",
   "value": [
@@ -118,6 +77,19 @@
    "Cristiano Amon"
   ]
  },
+ "guests:e2248828dffee294": {
+  "date": "2026-10-05",
+  "value": [
+   "Bill Ackman",
+   "Jack Manley",
+   "Stephen Stanley",
+   "Lt. General Rt. Karen Gibson",
+   "Steve Chiavarone",
+   "Martijn Rats",
+   "Sheila Kayaoglu",
+   "John Lovallo"
+  ]
+ },
  "guests:f50d4e6e6ee0c4bb": {
   "date": "2026-09-29",
   "value": [
@@ -168,36 +140,6 @@
     "sentiment": "bullish",
     "thesis": "Scott Galloway on Prof G Markets stated he remains bullish on Netflix stock despite its recent decline this year.",
     "ticker": "NFLX"
-   }
-  ]
- },
- "ideas:15165037c19152a6": {
-  "date": "2026-09-25",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Palo Alto Networks CEO Nikesh Arora expects well over 500 startups to chase agent security and highlights AI-driven attacks as a major security concern on CNBC's The Tech Download.",
-    "ticker": "PANW"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Okta CEO Todd McKinnon discusses identity becoming cyber's biggest category, projecting a $220B market opportunity within five to ten years on CNBC's Squawk on the Street.",
-    "ticker": "OKTA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Qualcomm CEO Cristiano Amon states the semiconductor supply chain is running at 100% capacity and highlights rising demand for on-device AI computing across smartphones, vehicles, and wearables on TBPN.",
-    "ticker": "QCOM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "CoreWeave EVP Chen Goldberg discusses the company's multi-rack Vera Rubin NVL72 deployment and AI infrastructure capabilities, positioning the company as a key AI infrastructure provider on The Neuron.",
-    "ticker": "CRWV"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Affirm CEO Max Levchin discusses the company's UK expansion with Amazon and breakthrough attention-based underwriting models on TBPN.",
-    "ticker": "AFFRM"
    }
   ]
  },
@@ -266,46 +208,6 @@
    }
   ]
  },
- "ideas:30c4e387129f15e3": {
-  "date": "2026-09-25",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Satya Nadella on TMTB Podcast Intel: Microsoft is positioned in an agent market orders of magnitude bigger than cloud, with AI becoming core to business strategy.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Tom Leighton on TMTB Podcast Intel: Akamai secured $11.6B Anthropic deal and close to $15B of multiyear commitments, demonstrating strong demand for infrastructure services.",
-    "ticker": "AKAM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Chen Goldberg on TMTB Podcast Intel: CoreWeave is building critical GPU infrastructure with multi-rack Vera Rubin NVL72 deployments, positioned as Platinum tier cloud provider.",
-    "ticker": "CRWV"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Nikesh Arora on TMTB Podcast Intel: Palo Alto Networks is well-positioned in AI-driven security with agent security becoming a new $220B+ market category.",
-    "ticker": "PANW"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Cristiano Amon on TBPN and Durga Malladi on Semi Doped: Qualcomm's High Bandwidth Compute architecture and Dragonfly AI250 offer differentiated inference solution with 18x effective bandwidth advantage on TCO.",
-    "ticker": "QCOM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Todd McKinnon on CNBC Squawk on the Street: Okta is positioned to lead identity security for AI agents with kill switch capabilities, topping a $220B market within five to ten years.",
-    "ticker": "OKTA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Ben Thompson on TMTB Podcast Intel: Meta is entering a 'cool era' with Muse as aggregator of aggregators, positioning it well in AI competition.",
-    "ticker": "META"
-   }
-  ]
- },
  "ideas:4badafae8394ad8f": {
   "date": "2026-09-29",
   "value": [
@@ -368,6 +270,16 @@
     "sentiment": "bullish",
     "thesis": "Meb Faber on The Meb Faber Show features Cambria Large Cap Shareholder Yield ETF in the shareholder yield strategy emphasizing large-cap dividend and buyback discipline.",
     "ticker": "LYLD"
+   }
+  ]
+ },
+ "ideas:80beb5c6814c5457": {
+  "date": "2026-10-05",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Bill Ackman on The Knowledge Project sold Netflix and later bought it back, demonstrating his evolving conviction in the company despite past skepticism about innovation vs. hype.",
+    "ticker": "NFLX"
    }
   ]
  },
