@@ -12,19 +12,6 @@
    "Rebecca Patterson"
   ]
  },
- "guests:693b2f097348d0a7": {
-  "date": "2026-09-28",
-  "value": [
-   "Satya Nadella",
-   "Tom Leighton",
-   "Durga Malladi",
-   "Marc Boroditsky",
-   "Chen Goldberg",
-   "Nikesh Arora",
-   "Cristiano Amon",
-   "Todd McKinnon"
-  ]
- },
  "guests:76f0d047d003f86d": {
   "date": "2026-10-01",
   "value": [
@@ -64,19 +51,6 @@
    "Matthew Prince"
   ]
  },
- "guests:beea2abf5c97e7eb": {
-  "date": "2026-09-28",
-  "value": [
-   "Satya Nadella",
-   "Tom Leighton",
-   "Durga Malladi",
-   "Marc Boroditsky",
-   "Ben Thompson",
-   "Chen Goldberg",
-   "Nikesh Arora",
-   "Cristiano Amon"
-  ]
- },
  "guests:e0153ae78ce510e2": {
   "date": "2026-10-05",
   "value": [
@@ -103,6 +77,19 @@
    "John Lovallo"
   ]
  },
+ "guests:e68c3ead33bfcced": {
+  "date": "2026-10-06",
+  "value": [
+   "Sholto Douglas",
+   "Nicholas Marwell",
+   "Sam Altman",
+   "Tibo Sottiaux",
+   "Keerthana Gopalakrishnan",
+   "Alexander Embiricos",
+   "Andrew Huberman",
+   "Brian Belski"
+  ]
+ },
  "guests:f50d4e6e6ee0c4bb": {
   "date": "2026-09-29",
   "value": [
@@ -116,45 +103,9 @@
    "Edward Yardeni"
   ]
  },
- "ideas:001b9eaa58430b6d": {
-  "date": "2026-09-28",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Microsoft CEO Satya Nadella views the agent market as orders of magnitude bigger than cloud, positioning the company favorably for AI infrastructure expansion per TMTB Podcast Intel.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Akamai CEO Tom Leighton highlighted $11.6B Anthropic deal and close to $15B of multiyear commitments, indicating strong enterprise infrastructure demand per TMTB Podcast Intel.",
-    "ticker": "AKAM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Qualcomm EVP Durga Malladi emphasized the Dragonfly AI250's 18x effective bandwidth advantage and winning on TCO in data center inference, positioning competitive differentiation per Semi Doped.",
-    "ticker": "QCOM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Ben Thompson noted Meta's 'cool era' with Muse as an aggregator platform, suggesting positive momentum per TMTB Podcast Intel.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Palo Alto Networks CEO Nikesh Arora expects well over 500 startups to chase agent security, positioning the company to capture growing security demand in the AI era per TMTB Podcast Intel.",
-    "ticker": "PANW"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Okta CEO Todd McKinnon discussed identity becoming cyber's biggest category topping a $220B market within five to ten years, with expanded kill switch capabilities for AI agents per TMTB Podcast Intel.",
-    "ticker": "OKTA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Scott Galloway on Prof G Markets stated he remains bullish on Netflix stock despite its recent decline this year.",
-    "ticker": "NFLX"
-   }
-  ]
+ "ideas:0d083f7e4253a041": {
+  "date": "2026-10-06",
+  "value": []
  },
  "ideas:16bf0b822a822e36": {
   "date": "2026-10-01",
@@ -173,51 +124,6 @@
     "sentiment": "neutral",
     "thesis": "David Rosenberg discussed the ROSY ETF on Macro Voices, though his specific view on the fund's outlook was not explicitly detailed in the excerpt.",
     "ticker": "ROSY"
-   }
-  ]
- },
- "ideas:2fd8e5c35eedd51a": {
-  "date": "2026-09-28",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Microsoft CEO Satya Nadella on TMTB Podcast discusses the agent market as orders of magnitude bigger than cloud, positioning Microsoft favorably in this emerging opportunity.",
-    "ticker": "MSFT"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Akamai CEO Tom Leighton on CNBC's Squawk on the Street discusses the $11.6B Anthropic deal and close to $15B of multiyear commitments, indicating strong business momentum.",
-    "ticker": "AKAM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Qualcomm EVP Durga Malladi on Semi Doped explains the Dragonfly AI250's technical differentiation with 18x effective bandwidth and competitive TCO advantages in data center inference.",
-    "ticker": "QCOM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Ben Thompson on Sharp Tech discusses Meta's cool era and Muse as the aggregator of aggregators, suggesting positive momentum for the company.",
-    "ticker": "META"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Palo Alto Networks CEO Nikesh Arora on CNBC's The Tech Download expects well over 500 startups to chase agent security, indicating a large market opportunity for PANW's security solutions.",
-    "ticker": "PANW"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Okta CEO Todd McKinnon on CNBC's Squawk on the Street discusses identity topping a $220B market within five to ten years, suggesting strong long-term growth potential.",
-    "ticker": "OKTA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Scott Galloway on Prof G Markets remains bullish on Netflix stock despite its recent decline.",
-    "ticker": "NFLX"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "CoreWeave EVP Chen Goldberg on The Neuron discusses the multi-rack Vera Rubin NVL72 deployment and infrastructure innovations that make AI infrastructure accessible, indicating strong positioning.",
-    "ticker": "CRWV"
    }
   ]
  },
