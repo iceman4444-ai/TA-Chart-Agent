@@ -582,3 +582,9 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-06,control,COHR,4.7,333.64,307.62,morning,11.9,60,7.8,Risk-on,bullish
 2026-10-06,control,DDOG,4.7,276.42,247.29,morning,12.7,70,10.5,Risk-on,bullish
 2026-10-06,control,NVDA,4.3,238.90,224.19,morning,9.2,67,6.2,Risk-on,bullish
+2026-10-06,pick,ALAB,4.8,389.80,346.07,afternoon,24.8,68,11.2,Risk-on,bullish
+2026-10-06,pick,FFIV,4.8,469.79,437.07,afternoon,13.5,70,7.0,Risk-on,bullish
+2026-10-06,pick,ILMN,4.7,273.54,262.92,afternoon,22.9,63,3.9,Risk-on,bullish
+2026-10-06,control,MRVL,4.7,287.01,268.64,afternoon,24.7,70,6.4,Risk-on,bullish
+2026-10-06,control,AMD,4.5,649.42,581.38,afternoon,25.2,72,10.5,Risk-on,bullish
+2026-10-06,control,ARM,4.4,302.56,286.29,afternoon,13.2,57,5.4,Risk-on,bullish
