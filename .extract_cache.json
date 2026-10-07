@@ -51,6 +51,19 @@
    "Matthew Prince"
   ]
  },
+ "guests:a3a0e84cfdcc4476": {
+  "date": "2026-10-07",
+  "value": [
+   "Jacob Coxon",
+   "Amin Vahdat",
+   "Thomas Wolf",
+   "Sam Altman",
+   "George Kurtz",
+   "Justin Hotard",
+   "Alicia Levine",
+   "Chuck Clough"
+  ]
+ },
  "guests:e0153ae78ce510e2": {
   "date": "2026-10-05",
   "value": [
@@ -90,19 +103,6 @@
    "Brian Belski"
   ]
  },
- "guests:f50d4e6e6ee0c4bb": {
-  "date": "2026-09-29",
-  "value": [
-   "Noah Shinn",
-   "Jensen Huang",
-   "Mike Cannon-Brookes",
-   "Matthew Prince",
-   "Sam Badri",
-   "Koray Kavukcuoglu",
-   "Daniel Ek",
-   "Edward Yardeni"
-  ]
- },
  "ideas:0d083f7e4253a041": {
   "date": "2026-10-06",
   "value": []
@@ -130,36 +130,6 @@
  "ideas:370471e221e0e37d": {
   "date": "2026-10-05",
   "value": []
- },
- "ideas:4badafae8394ad8f": {
-  "date": "2026-09-29",
-  "value": [
-   {
-    "sentiment": "bullish",
-    "thesis": "Jensen Huang, NVIDIA CEO on CNBC's Squawk Box, discussed the company's share buyback and open agent safety platform, positioning NVIDIA as a leader in AI infrastructure and governance.",
-    "ticker": "NVDA"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Atlassian CEO Mike Cannon-Brookes on Decoder stated that MCP users are expanding Atlassian spend twice as fast and the company is reshaping around AI, countering SaaS apocalypse narratives.",
-    "ticker": "TEAM"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Cloudflare CEO Matthew Prince on Decoder discussed bots overtaking human traffic and pay-per-crawl models via HTTP 402, indicating new revenue opportunities from changing internet dynamics.",
-    "ticker": "NET"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Cisco Head of IR Sam Badri on The Real Eisman Playbook indicated growth accelerating from 5% to 18% and noted 90% of AI users are still at basic prompting stage, suggesting significant runway for enterprise adoption.",
-    "ticker": "CSCO"
-   },
-   {
-    "sentiment": "bullish",
-    "thesis": "Scott Galloway on Prof G Markets stated he remains bullish on Netflix despite recent stock decline, suggesting undervaluation at current levels.",
-    "ticker": "NFLX"
-   }
-  ]
  },
  "ideas:5999b2017bb4bdf4": {
   "date": "2026-10-02",
@@ -238,6 +208,31 @@
     "sentiment": "bullish",
     "thesis": "Micron's upcoming earnings discussed on The Deep End featured gross margins near 85% and $100B of strategic customer agreements amid cyclical market dynamics.",
     "ticker": "MU"
+   }
+  ]
+ },
+ "ideas:9f6b9f2b9348da86": {
+  "date": "2026-10-07",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Google's Chief Technologist for AI Infrastructure Amin Vahdat on Training Data podcast highlighted Google's competitive advantages in AI data center infrastructure, TPU design, and co-design with DeepMind, suggesting confidence in GOOG's AI infrastructure leadership.",
+    "ticker": "GOOG"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Thomas Wolf on MTS discussed NVIDIA's $12.93B acquisition of Hugging Face and enterprise adoption of open-weights models, indicating strong demand for NVIDIA's AI capabilities and ecosystem expansion.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "CrowdStrike CEO George Kurtz on CNBC's Squawk on the Street discussed AI safety and agents as a new attack surface, positioning the company at the forefront of AI-related cybersecurity needs.",
+    "ticker": "CRWD"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "Nokia CEO Justin Hotard on CNBC's The Tech Download discussed Nokia's role in AI data-center networking and AI-ready mobile networks as customers face power and supply constraints.",
+    "ticker": "NOK"
    }
   ]
  },

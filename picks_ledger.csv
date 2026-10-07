@@ -588,3 +588,14 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-06,control,MRVL,4.7,287.01,268.64,afternoon,24.7,70,6.4,Risk-on,bullish
 2026-10-06,control,AMD,4.5,649.42,581.38,afternoon,25.2,72,10.5,Risk-on,bullish
 2026-10-06,control,ARM,4.4,302.56,286.29,afternoon,13.2,57,5.4,Risk-on,bullish
+2026-10-07,pick,HPE,4.9,70.48,61.87,morning,24.8,70,12.2,Risk-on,bullish
+2026-10-07,pick,PANW,4.9,419.91,378.79,morning,14.9,68,9.8,Risk-on,bullish
+2026-10-07,pick,ALAB,4.8,389.80,346.07,morning,24.8,68,11.2,Risk-on,bullish
+2026-10-07,pick,FFIV,4.8,469.79,437.07,morning,13.5,70,7.0,Risk-on,bullish
+2026-10-07,pick,ILMN,4.7,273.54,262.93,morning,22.9,63,3.9,Risk-on,bullish
+2026-10-07,setup,GOOG,3.8,344.59,342.50,morning,0.6,54,0.6,Risk-on,bullish
+2026-10-07,setup,NVDA,4.4,239.24,224.88,morning,8.9,67,6.0,Risk-on,bullish
+2026-10-07,setup,CRWD,4.5,278.86,248.70,morning,24.7,72,10.8,Risk-on,bullish
+2026-10-07,control,APH,4.5,88.62,82.59,morning,8.7,68,6.8,Risk-on,bullish
+2026-10-07,control,MTD,4.4,1533.07,1452.93,morning,8.2,65,5.2,Risk-on,bullish
+2026-10-07,control,MSTR,4.3,164.55,153.00,morning,30.2,65,7.0,Risk-on,bullish
