@@ -25,6 +25,19 @@
    "Libby Cantrill"
   ]
  },
+ "guests:8aa47cf82017edcf": {
+  "date": "2026-10-07",
+  "value": [
+   "Jacob Coxon",
+   "Amin Vahdat",
+   "Thomas Wolf",
+   "Sam Altman",
+   "George Kurtz",
+   "Justin Hotard",
+   "Nitin Nohria",
+   "Andrew Huberman"
+  ]
+ },
  "guests:9ed4026244498d3c": {
   "date": "2026-10-01",
   "value": [
@@ -124,6 +137,31 @@
     "sentiment": "neutral",
     "thesis": "David Rosenberg discussed the ROSY ETF on Macro Voices, though his specific view on the fund's outlook was not explicitly detailed in the excerpt.",
     "ticker": "ROSY"
+   }
+  ]
+ },
+ "ideas:226a38d0a557fa87": {
+  "date": "2026-10-07",
+  "value": [
+   {
+    "sentiment": "bullish",
+    "thesis": "Google's AI infrastructure chief Amin Vahdat highlighted the company's TPU strategy and AI data center advantages on multiple podcasts, positioning Google as a leader in frontier AI infrastructure.",
+    "ticker": "GOOG"
+   },
+   {
+    "sentiment": "bullish",
+    "thesis": "NVIDIA acquired Hugging Face for $12.93B, demonstrating the company's aggressive expansion into AI software and enterprise open-model adoption as discussed by Thomas Wolf on MTS.",
+    "ticker": "NVDA"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "CrowdStrike CEO George Kurtz discussed AI safety and agents as a new attack surface on CNBC's Squawk on the Street, indicating the company's focus on emerging cybersecurity threats.",
+    "ticker": "CRWD"
+   },
+   {
+    "sentiment": "neutral",
+    "thesis": "Nokia CEO Justin Hotard discussed the company's place in AI data-center networking and AI-ready mobile networks on CNBC's The Tech Download, highlighting infrastructure opportunities.",
+    "ticker": "NOK"
    }
   ]
  },

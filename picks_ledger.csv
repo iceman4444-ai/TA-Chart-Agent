@@ -599,3 +599,10 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-07,control,APH,4.5,88.62,82.59,morning,8.7,68,6.8,Risk-on,bullish
 2026-10-07,control,MTD,4.4,1533.07,1452.93,morning,8.2,65,5.2,Risk-on,bullish
 2026-10-07,control,MSTR,4.3,164.55,153.00,morning,30.2,65,7.0,Risk-on,bullish
+2026-10-07,pick,FTNT,4.8,189.28,175.37,afternoon,14.1,69,7.3,Risk-on,bullish
+2026-10-07,pick,MRVL,4.8,284.68,268.64,afternoon,22.5,68,5.6,Risk-on,bullish
+2026-10-07,pick,CRWD,4.7,265.44,251.59,afternoon,17.9,61,5.2,Risk-on,bullish
+2026-10-07,setup,NOK,4.2,10.62,10.46,afternoon,4.5,52,1.5,Risk-on,neutral
+2026-10-07,control,SMCI,4.6,44.94,43.87,afternoon,20.2,65,2.4,Risk-on,bullish
+2026-10-07,control,SPCX,4.3,167.60,165.24,afternoon,17.8,65,1.4,Risk-on,bullish
+2026-10-07,control,MCK,4.3,910.53,891.89,afternoon,3.4,58,2.0,Risk-on,bullish
