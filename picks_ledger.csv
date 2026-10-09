@@ -629,3 +629,10 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-09,control,PG,4.4,150.59,148.12,morning,3.3,61,1.6,Risk-on,bullish
 2026-10-09,control,FTNT,4.5,189.10,176.88,morning,13.5,69,6.5,Risk-on,bullish
 2026-10-09,control,MO,4.4,71.42,71.32,morning,6.0,66,0.1,Risk-on,bullish
+2026-10-09,pick,PANW,4.7,418.78,389.72,afternoon,12.9,63,6.9,Risk-on,bullish
+2026-10-09,pick,VEEV,4.6,296.13,274.96,afternoon,14.1,69,7.1,Risk-on,bullish
+2026-10-09,pick,DDOG,4.5,293.26,259.20,afternoon,18.8,73,11.6,Risk-on,bullish
+2026-10-09,pick,GNRC,4.5,224.94,214.55,afternoon,10.6,64,4.6,Risk-on,bullish
+2026-10-09,control,APA,4.3,45.88,44.00,afternoon,8.0,62,4.1,Risk-on,bullish
+2026-10-09,control,SHOP,4.5,170.85,152.86,afternoon,18.0,73,10.5,Risk-on,bullish
+2026-10-09,control,IT,4.4,191.15,187.32,afternoon,2.8,55,2.0,Risk-on,bullish
