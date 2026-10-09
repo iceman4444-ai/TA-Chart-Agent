@@ -621,3 +621,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-08,control,GNRC,4.6,224.40,214.13,afternoon,10.7,64,4.6,Risk-on,bullish
 2026-10-08,control,MCK,4.4,930.25,891.89,afternoon,5.5,62,4.1,Risk-on,bullish
 2026-10-08,control,EBAY,4.4,111.98,108.87,afternoon,4.9,62,2.8,Risk-on,bullish
+2026-10-09,pick,PLTR,4.7,198.78,184.91,morning,13.4,70,7.0,Risk-on,bullish
+2026-10-09,pick,ACN,4.7,208.36,199.96,morning,13.7,63,4.0,Risk-on,bullish
+2026-10-09,pick,HPE,4.7,71.00,63.33,morning,23.4,68,10.8,Risk-on,bullish
+2026-10-09,pick,SHOP,4.7,164.56,150.49,morning,14.4,69,8.5,Risk-on,bullish
+2026-10-09,pick,AMD,4.6,620.68,593.47,morning,17.9,61,4.4,Risk-on,bullish
+2026-10-09,control,PG,4.4,150.59,148.12,morning,3.3,61,1.6,Risk-on,bullish
+2026-10-09,control,FTNT,4.5,189.10,176.88,morning,13.5,69,6.5,Risk-on,bullish
+2026-10-09,control,MO,4.4,71.42,71.32,morning,6.0,66,0.1,Risk-on,bullish
