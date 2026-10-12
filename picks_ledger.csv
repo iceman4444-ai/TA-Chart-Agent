@@ -636,3 +636,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-09,control,APA,4.3,45.88,44.00,afternoon,8.0,62,4.1,Risk-on,bullish
 2026-10-09,control,SHOP,4.5,170.85,152.86,afternoon,18.0,73,10.5,Risk-on,bullish
 2026-10-09,control,IT,4.4,191.15,187.32,afternoon,2.8,55,2.0,Risk-on,bullish
+2026-10-12,pick,MRNA,5.0,213.74,186.40,afternoon,51.1,66,12.8,Risk-on,bullish
+2026-10-12,pick,HPE,4.7,70.33,64.66,afternoon,20.2,63,8.1,Risk-on,bullish
+2026-10-12,pick,CDNS,4.6,348.42,339.72,afternoon,8.7,62,2.5,Risk-on,bullish
+2026-10-12,pick,DDOG,4.6,287.29,262.06,afternoon,16.2,68,8.8,Risk-on,bullish
+2026-10-12,pick,GNRC,4.6,218.37,214.95,afternoon,7.2,58,1.6,Risk-on,bullish
+2026-10-12,control,HUM,4.4,433.50,391.96,afternoon,11.3,67,9.6,Risk-on,bullish
+2026-10-12,control,FFIV,4.4,473.49,449.83,afternoon,12.7,66,5.0,Risk-on,bullish
+2026-10-12,control,KEYS,4.5,377.70,359.80,afternoon,10.3,63,4.7,Risk-on,bullish
