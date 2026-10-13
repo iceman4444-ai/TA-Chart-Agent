@@ -644,3 +644,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-12,control,HUM,4.4,433.50,391.96,afternoon,11.3,67,9.6,Risk-on,bullish
 2026-10-12,control,FFIV,4.4,473.49,449.83,afternoon,12.7,66,5.0,Risk-on,bullish
 2026-10-12,control,KEYS,4.5,377.70,359.80,afternoon,10.3,63,4.7,Risk-on,bullish
+2026-10-13,pick,MRNA,5.0,213.74,186.40,morning,51.1,66,12.8,Risk-on,bullish
+2026-10-13,pick,HPE,4.7,70.33,64.66,morning,20.2,63,8.1,Risk-on,bullish
+2026-10-13,pick,CDNS,4.6,348.42,339.72,morning,8.7,62,2.5,Risk-on,bullish
+2026-10-13,pick,DDOG,4.6,287.29,262.06,morning,16.2,68,8.8,Risk-on,bullish
+2026-10-13,pick,GNRC,4.6,218.37,214.95,morning,7.2,58,1.6,Risk-on,bullish
+2026-10-13,control,FFIV,4.4,473.49,449.83,morning,12.7,66,5.0,Risk-on,bullish
+2026-10-13,control,VEEV,4.5,295.85,276.47,morning,13.2,69,6.5,Risk-on,bullish
+2026-10-13,control,PG,4.4,153.20,151.30,morning,4.9,66,1.2,Risk-on,bullish
