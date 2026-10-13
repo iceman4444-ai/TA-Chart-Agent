@@ -652,3 +652,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-13,control,FFIV,4.4,473.49,449.83,morning,12.7,66,5.0,Risk-on,bullish
 2026-10-13,control,VEEV,4.5,295.85,276.47,morning,13.2,69,6.5,Risk-on,bullish
 2026-10-13,control,PG,4.4,153.20,151.30,morning,4.9,66,1.2,Risk-on,bullish
+2026-10-13,pick,SNPS,4.8,494.51,471.89,afternoon,16.6,67,4.6,Risk-on,bullish
+2026-10-13,pick,ACN,4.5,213.56,195.55,afternoon,14.8,65,8.4,Risk-on,bullish
+2026-10-13,control,GOOGL,4.3,353.78,346.53,afternoon,2.3,58,2.0,Risk-on,bullish
+2026-10-13,control,IFF,4.4,88.20,84.59,afternoon,4.3,67,4.1,Risk-on,bullish
+2026-10-13,control,ELV,4.3,425.27,402.33,afternoon,6.2,66,5.4,Risk-on,bullish
