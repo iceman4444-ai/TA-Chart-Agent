@@ -679,3 +679,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-15,control,NTAP,4.4,222.20,214.72,morning,10.6,57,3.4,Risk-on,bullish
 2026-10-15,control,AAPL,4.3,342.96,336.81,morning,5.7,62,1.8,Risk-on,bullish
 2026-10-15,control,HUM,4.3,427.40,395.28,morning,9.1,62,7.5,Risk-on,bullish
+2026-10-15,pick,HUM,4.6,432.20,397.66,afternoon,10.0,64,8.0,Risk-on,bullish
+2026-10-15,pick,IT,4.5,207.31,204.72,afternoon,10.1,65,1.2,Risk-on,bullish
+2026-10-15,control,WSM,4.4,252.03,235.13,afternoon,7.4,69,6.7,Risk-on,bullish
+2026-10-15,control,PLTR,4.3,200.50,193.13,afternoon,10.2,63,3.7,Risk-on,bullish
+2026-10-15,control,ULTA,4.3,609.24,579.28,afternoon,11.9,74,4.9,Risk-on,bullish
