@@ -684,3 +684,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-15,control,WSM,4.4,252.03,235.13,afternoon,7.4,69,6.7,Risk-on,bullish
 2026-10-15,control,PLTR,4.3,200.50,193.13,afternoon,10.2,63,3.7,Risk-on,bullish
 2026-10-15,control,ULTA,4.3,609.24,579.28,afternoon,11.9,74,4.9,Risk-on,bullish
+2026-10-16,pick,MRNA,4.8,236.50,197.98,morning,56.0,72,16.3,Risk-on,bullish
+2026-10-16,pick,HUM,4.6,432.20,397.66,morning,10.0,64,8.0,Risk-on,bullish
+2026-10-16,pick,SNPS,4.6,468.11,457.85,morning,9.6,55,2.2,Risk-on,bullish
+2026-10-16,pick,DHR,4.5,231.50,220.45,morning,8.7,66,4.8,Risk-on,bullish
+2026-10-16,pick,IT,4.5,207.31,204.72,morning,10.1,65,1.2,Risk-on,bullish
+2026-10-16,control,MCK,4.3,998.64,936.87,morning,11.8,75,6.2,Risk-on,bullish
+2026-10-16,control,PFE,4.4,29.44,28.31,morning,5.5,69,3.8,Risk-on,bullish
+2026-10-16,control,EXPD,4.4,198.64,190.93,morning,5.3,65,3.9,Risk-on,bullish
