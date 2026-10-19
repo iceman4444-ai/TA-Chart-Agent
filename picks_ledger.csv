@@ -706,3 +706,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-19,control,TMO,4.4,690.00,668.35,morning,8.4,64,3.1,Mixed,bullish
 2026-10-19,control,BIIB,4.2,232.65,226.11,morning,5.9,61,2.8,Mixed,bullish
 2026-10-19,control,VEEV,4.5,310.36,284.82,morning,15.5,71,8.2,Mixed,bullish
+2026-10-19,pick,IT,4.6,207.72,190.94,afternoon,9.8,65,8.1,Mixed,bullish
+2026-10-19,pick,KDP,4.6,34.46,32.33,afternoon,9.5,69,6.2,Mixed,bullish
+2026-10-19,control,APA,4.3,49.76,44.85,afternoon,13.5,71,9.9,Mixed,bullish
+2026-10-19,control,CCL,4.2,26.45,26.05,afternoon,6.5,60,1.5,Mixed,bullish
+2026-10-19,control,EL,4.5,105.78,99.51,afternoon,9.2,65,5.9,Mixed,bullish
