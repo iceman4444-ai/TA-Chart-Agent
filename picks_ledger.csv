@@ -711,3 +711,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-19,control,APA,4.3,49.76,44.85,afternoon,13.5,71,9.9,Mixed,bullish
 2026-10-19,control,CCL,4.2,26.45,26.05,afternoon,6.5,60,1.5,Mixed,bullish
 2026-10-19,control,EL,4.5,105.78,99.51,afternoon,9.2,65,5.9,Mixed,bullish
+2026-10-20,pick,MRNA,4.8,226.89,203.87,morning,43.3,64,10.1,Mixed,bullish
+2026-10-20,pick,IT,4.6,207.72,190.94,morning,9.8,65,8.1,Mixed,bullish
+2026-10-20,pick,KDP,4.6,34.46,32.33,morning,9.5,69,6.2,Mixed,bullish
+2026-10-20,pick,SHOP,4.6,171.06,160.38,morning,14.2,62,6.2,Mixed,bullish
+2026-10-20,pick,ACN,4.5,236.93,230.42,morning,25.3,76,2.7,Mixed,bullish
+2026-10-20,control,VTRS,4.4,18.26,17.69,morning,7.5,61,3.1,Mixed,bullish
+2026-10-20,control,PFE,4.4,29.44,28.43,morning,5.1,67,3.4,Mixed,bullish
+2026-10-20,control,COST,4.3,995.53,988.93,morning,6.5,74,0.7,Mixed,bullish
