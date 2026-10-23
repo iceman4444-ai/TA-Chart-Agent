@@ -760,3 +760,9 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-23,control,AEP,4.3,130.64,128.11,morning,6.3,70,1.9,Risk-on,bullish
 2026-10-23,control,ISRG,4.3,443.85,441.86,morning,12.4,68,0.4,Risk-on,bullish
 2026-10-23,control,HUM,4.3,420.97,408.16,morning,6.0,56,3.0,Risk-on,bullish
+2026-10-23,pick,CTSH,4.6,70.54,68.37,afternoon,14.7,68,3.1,Risk-on,bullish
+2026-10-23,pick,EL,4.6,108.67,105.52,afternoon,10.5,67,2.9,Risk-on,bullish
+2026-10-23,pick,IT,4.6,230.28,208.50,afternoon,19.7,72,9.5,Risk-on,bullish
+2026-10-23,control,URI,4.4,1098.88,1064.29,afternoon,5.1,60,3.1,Risk-on,bullish
+2026-10-23,control,BF-B,4.3,29.41,28.71,afternoon,8.7,65,2.4,Risk-on,bullish
+2026-10-23,control,BIIB,4.3,250.69,234.17,afternoon,12.2,71,6.6,Risk-on,bullish
