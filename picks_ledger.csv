@@ -774,3 +774,9 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-26,control,HAS,4.5,117.44,107.59,morning,25.0,88,8.4,Risk-on,bullish
 2026-10-26,control,CRM,4.4,248.57,239.07,morning,5.9,61,3.8,Risk-on,bullish
 2026-10-26,control,CNC,4.3,70.17,66.57,morning,6.6,61,5.1,Risk-on,bullish
+2026-10-26,pick,CCI,4.8,87.56,86.78,afternoon,17.9,74,0.9,Risk-on,bullish
+2026-10-26,pick,AMT,4.6,188.45,185.63,afternoon,8.4,66,1.5,Risk-on,bullish
+2026-10-26,pick,CDW,4.6,163.23,149.62,afternoon,12.6,68,8.3,Risk-on,bullish
+2026-10-26,control,HPQ,4.5,34.12,31.67,afternoon,8.4,63,7.2,Risk-on,bullish
+2026-10-26,control,OXY,4.4,64.07,61.50,afternoon,7.1,68,4.0,Risk-on,bullish
+2026-10-26,control,CRL,4.3,357.35,309.79,afternoon,20.9,76,13.3,Risk-on,bullish
