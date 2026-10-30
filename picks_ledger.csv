@@ -821,3 +821,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-29,control,TMO,4.5,709.18,677.38,afternoon,8.6,65,4.5,Risk-on,bullish
 2026-10-29,control,TRGP,4.5,312.37,293.22,afternoon,7.7,67,6.1,Risk-on,bullish
 2026-10-29,control,TRMB,4.6,65.34,62.07,afternoon,9.4,70,5.0,Risk-on,bullish
+2026-10-30,pick,NUE,4.7,275.29,256.88,morning,8.9,69,6.7,Risk-on,bullish
+2026-10-30,pick,CCL,4.6,28.84,28.72,morning,16.4,69,0.4,Risk-on,bullish
+2026-10-30,pick,RCL,4.6,310.54,295.92,morning,14.7,70,4.7,Risk-on,bullish
+2026-10-30,pick,STLD,4.6,253.53,241.43,morning,7.0,63,4.8,Risk-on,bullish
+2026-10-30,pick,TSLA,4.6,403.30,393.80,morning,9.4,63,2.4,Risk-on,bullish
+2026-10-30,control,DLTR,4.4,132.03,127.56,morning,8.5,66,3.4,Risk-on,bullish
+2026-10-30,control,ADI,4.4,433.28,410.16,morning,11.8,66,5.3,Risk-on,bullish
+2026-10-30,control,ACN,4.4,247.22,225.51,morning,23.5,67,8.8,Risk-on,bullish
