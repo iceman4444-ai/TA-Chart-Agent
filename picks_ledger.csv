@@ -829,3 +829,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-30,control,DLTR,4.4,132.03,127.56,morning,8.5,66,3.4,Risk-on,bullish
 2026-10-30,control,ADI,4.4,433.28,410.16,morning,11.8,66,5.3,Risk-on,bullish
 2026-10-30,control,ACN,4.4,247.22,225.51,morning,23.5,67,8.8,Risk-on,bullish
+2026-10-30,pick,DLTR,4.7,133.80,127.56,afternoon,9.9,67,4.7,Risk-on,bullish
+2026-10-30,pick,ACGL,4.6,106.33,102.36,afternoon,8.6,70,3.7,Risk-on,bullish
+2026-10-30,pick,AJG,4.6,276.05,256.72,afternoon,11.2,70,7.0,Risk-on,bullish
+2026-10-30,pick,CBOE,4.6,335.79,314.81,afternoon,14.0,64,6.2,Risk-on,bullish
+2026-10-30,pick,CRL,4.6,355.74,324.62,afternoon,17.9,66,8.7,Risk-on,bullish
+2026-10-30,control,SBAC,4.5,188.68,188.55,afternoon,5.1,61,0.1,Risk-on,bullish
+2026-10-30,control,PM,4.5,208.80,200.52,afternoon,8.1,65,4.0,Risk-on,bullish
+2026-10-30,control,GDDY,4.5,117.45,107.13,afternoon,15.8,66,8.8,Risk-on,bullish
