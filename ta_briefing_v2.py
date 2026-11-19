@@ -635,16 +635,26 @@ def macro_backdrop() -> dict:
 
     if "^TNX" in closes:
         c = closes["^TNX"]
-        # ^TNX quotes the 10-year yield times ten (42.5 == 4.25%).
-        level = float(c.iloc[-1]) / 10
-        prev = float(c.iloc[-2]) / 10 if len(c) > 1 else level
-        month = float(c.iloc[-22]) / 10 if len(c) > 22 else None
-        out["rates"] = {
-            "name": "US 10-year yield",
-            "level": f"{level:.2f}%",
-            "day_bp": round((level - prev) * 100),
-            "month_bp": round((level - month) * 100) if month else None,
-        }
+        # ^TNX quotes the 10-year yield directly, in percent: 4.25 == 4.25%.
+        # It was read here as yield-times-ten, which reported the 10-year at a
+        # tenth of its level AND shrank every basis-point move by the same
+        # factor, so the rates leg always looked flat. Verified against five
+        # years of history, where the series runs 1.34 to 5.31.
+        level = float(c.iloc[-1])
+        prev = float(c.iloc[-2]) if len(c) > 1 else level
+        month = float(c.iloc[-22]) if len(c) > 22 else None
+        if not 0 < level < 20:
+            # A feed that switched convention would land here rather than
+            # quietly producing a plausible-looking wrong number.
+            log(f"macro: ^TNX level {level} outside 0-20% — dropping rates")
+            c = None
+        if c is not None:
+            out["rates"] = {
+                "name": "US 10-year yield",
+                "level": f"{level:.2f}%",
+                "day_bp": round((level - prev) * 100),
+                "month_bp": round((level - month) * 100) if month else None,
+            }
     for sym, name in (("UUP", "US dollar"), ("GLD", "Gold")):
         if sym in closes:
             out[name.split()[-1].lower()] = {
