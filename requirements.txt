@@ -3,6 +3,11 @@ pandas>=2.0
 numpy>=1.26
 matplotlib>=3.8
 mplfinance>=0.12.10b0
+# mplfinance does `from six.moves import zip` but never declares six, so it
+# only ever worked because pandas pulled six in through python-dateutil.
+# pandas dropped that chain and every run died at import for three weeks.
+# Declare it here: nothing else in this file depends on six.
+six>=1.16
 PyYAML>=6.0
 anthropic>=0.92
 lxml>=5.0
