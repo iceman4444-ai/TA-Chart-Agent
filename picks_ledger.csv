@@ -837,3 +837,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-10-30,control,SBAC,4.5,188.68,188.55,afternoon,5.1,61,0.1,Risk-on,bullish
 2026-10-30,control,PM,4.5,208.80,200.52,afternoon,8.1,65,4.0,Risk-on,bullish
 2026-10-30,control,GDDY,4.5,117.45,107.13,afternoon,15.8,66,8.8,Risk-on,bullish
+2026-11-19,pick,CMG,4.8,36.95,36.57,afternoon,13.6,67,1.0,Mixed,bullish
+2026-11-19,pick,GEN,4.7,30.47,28.50,afternoon,15.4,64,6.5,Mixed,bullish
+2026-11-19,pick,IDXX,4.7,698.47,663.44,afternoon,21.9,68,5.0,Mixed,bullish
+2026-11-19,pick,FISV,4.6,60.48,57.15,afternoon,18.4,62,5.5,Mixed,bullish
+2026-11-19,pick,APP,4.5,390.91,376.77,afternoon,27.1,65,3.6,Mixed,bullish
+2026-11-19,control,SBUX,4.3,109.11,105.48,afternoon,10.0,63,3.3,Mixed,bullish
+2026-11-19,control,JKHY,4.3,174.58,169.82,afternoon,10.1,61,2.7,Mixed,bullish
+2026-11-19,control,AIZ,4.3,318.96,305.21,afternoon,11.3,70,4.3,Mixed,bullish
