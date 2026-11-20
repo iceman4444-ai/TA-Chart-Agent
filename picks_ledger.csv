@@ -845,3 +845,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-19,control,SBUX,4.3,109.11,105.48,afternoon,10.0,63,3.3,Mixed,bullish
 2026-11-19,control,JKHY,4.3,174.58,169.82,afternoon,10.1,61,2.7,Mixed,bullish
 2026-11-19,control,AIZ,4.3,318.96,305.21,afternoon,11.3,70,4.3,Mixed,bullish
+2026-11-19,pick,CLX,4.5,104.90,99.21,afternoon,17.5,64,5.4,Risk-off,bullish
+2026-11-19,pick,EW,4.4,103.88,100.56,afternoon,13.1,66,3.2,Risk-off,bullish
+2026-11-19,control,IDXX,4.0,689.65,663.44,afternoon,19.6,65,3.8,Risk-off,bullish
+2026-11-19,control,AES,4.0,15.02,14.90,afternoon,1.5,75,0.8,Risk-off,bullish
+2026-11-19,control,LUV,4.2,45.61,44.72,afternoon,7.4,56,2.0,Risk-off,bullish
