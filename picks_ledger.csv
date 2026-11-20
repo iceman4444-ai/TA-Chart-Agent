@@ -858,3 +858,8 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-20,control,CMCSA,4.0,24.86,24.56,morning,9.0,60,1.2,Risk-off,bullish
 2026-11-20,control,TSCO,4.3,38.74,36.68,morning,14.2,69,5.3,Risk-off,bullish
 2026-11-20,control,AIZ,4.2,316.03,306.57,morning,10.0,65,3.0,Risk-off,bullish
+2026-11-20,pick,TSCO,4.4,38.44,36.68,afternoon,13.0,66,4.6,Risk-off,bullish
+2026-11-20,pick,COST,4.3,1102.15,1066.59,afternoon,11.8,70,3.2,Risk-off,bullish
+2026-11-20,control,REGN,3.9,920.69,912.90,afternoon,11.0,57,0.8,Risk-off,bullish
+2026-11-20,control,CHTR,4.2,128.73,123.38,afternoon,9.0,54,4.2,Risk-off,bullish
+2026-11-20,control,ES,4.1,71.04,70.73,afternoon,5.4,58,0.4,Risk-off,bullish
