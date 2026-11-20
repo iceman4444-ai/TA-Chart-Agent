@@ -850,3 +850,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-19,control,IDXX,4.0,689.65,663.44,afternoon,19.6,65,3.8,Risk-off,bullish
 2026-11-19,control,AES,4.0,15.02,14.90,afternoon,1.5,75,0.8,Risk-off,bullish
 2026-11-19,control,LUV,4.2,45.61,44.72,afternoon,7.4,56,2.0,Risk-off,bullish
+2026-11-20,pick,CMG,4.7,36.30,34.59,morning,11.6,63,4.7,Risk-off,bullish
+2026-11-20,pick,APP,4.5,379.02,376.77,morning,22.8,61,0.6,Risk-off,bullish
+2026-11-20,pick,CLX,4.5,104.90,99.21,morning,17.5,64,5.4,Risk-off,bullish
+2026-11-20,pick,GEN,4.5,30.15,28.77,morning,14.2,61,4.6,Risk-off,bullish
+2026-11-20,pick,EW,4.4,103.88,100.56,morning,13.1,66,3.2,Risk-off,bullish
+2026-11-20,control,CMCSA,4.0,24.86,24.56,morning,9.0,60,1.2,Risk-off,bullish
+2026-11-20,control,TSCO,4.3,38.74,36.68,morning,14.2,69,5.3,Risk-off,bullish
+2026-11-20,control,AIZ,4.2,316.03,306.57,morning,10.0,65,3.0,Risk-off,bullish
