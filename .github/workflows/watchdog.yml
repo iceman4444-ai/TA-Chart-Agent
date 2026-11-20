@@ -1,0 +1,37 @@
+name: Briefing Watchdog
+
+# Emails when the briefing stops sending. Separate from ta_briefing.yml on
+# purpose: the briefing went dark for three weeks because mplfinance lost
+# its undeclared dependency on six, and the crash was at import, so every
+# bit of reporting inside the briefing died with it. A watchdog that ran
+# `pip install -r requirements.txt` or imported the briefing would have
+# failed identically and stayed just as quiet.
+#
+# So this job has NO setup-python and NO install step: it runs the runner's
+# stock python3 against a stdlib-only script. Do not add dependencies here,
+# and do not merge it into the briefing workflow.
+
+on:
+  schedule:
+    # 04:45 UTC, Tue-Sat: 23:45 ET the same weekday in winter, 00:45 ET the
+    # next morning in summer. The script resolves both to the same trading
+    # day, so one entry covers the year. Runs after the last afternoon
+    # catch-up cron (~21:30 ET), so a missing slot is missing, not pending.
+    - cron: "45 4 * * 2-6"
+  # Lets the check be verified on demand without waiting a day.
+  workflow_dispatch:
+
+permissions:
+  contents: read  # reads .last-send; never writes it
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that today's recaps were sent
+        env:
+          SECRET_A: ${{ secrets.GOOG }}
+          SECRET_B: ${{ secrets.TARECAP2 }}
+        run: python3 watchdog.py

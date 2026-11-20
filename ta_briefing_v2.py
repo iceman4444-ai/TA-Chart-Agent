@@ -51,12 +51,60 @@ DEGRADED: list[tuple[str, str]] = []
 # confirmations, pulling guest names, lifting tickers out of show notes) are
 # structured-output work that a small model does just as well for a fraction
 # of the cost — which is what keeps the credit balance from running dry.
-COMMENTARY_MODEL = "claude-opus-5"
-EXTRACT_MODEL = "claude-haiku-4-5"
+COMMENTARY_MODEL = "claude-opus-5-5"
+EXTRACT_MODEL = "claude-haiku-5-5"
 # Rare, hard analysis — what the track record implies, whether the method
 # holds up — runs on the frontier model. Infrequent enough that its higher
 # per-token price is a rounding error next to the daily calls.
-ANALYST_MODEL = "claude-fable-5-1"
+ANALYST_MODEL = "claude-fable-5-2"
+
+# Opus 5.5 defaults to medium effort where Opus 5 defaulted to high, so the
+# level is stated rather than inherited: the model swap is meant to be a
+# price cut, not a quiet change in how hard the commentary thinks. Tuning
+# this down is a separate, measured decision.
+COMMENTARY_EFFORT = "high"
+
+# $/1M tokens, used only for the cost line in the log. Swapping a model
+# without touching these would silently misreport the bill, so they live
+# beside the model names they price.
+MODEL_PRICES = {
+    "claude-opus-5-5": (4.0, 20.0),
+    "claude-haiku-5-5": (0.10, 0.50),
+    "claude-fable-5-2": (8.0, 40.0),
+}
+
+# Every call's token usage, so the run can report what it actually cost.
+# Four of the five call sites previously recorded nothing, which is why the
+# daily spend could only ever be estimated.
+USAGE: list[tuple[str, str, int, int]] = []
+
+
+def note_usage(label: str, model: str, usage) -> None:
+    """Record one call's token usage for the end-of-run cost line."""
+    try:
+        USAGE.append((label, model, int(usage.input_tokens), int(usage.output_tokens)))
+    except Exception:
+        pass  # never let accounting break a send
+
+
+def usage_summary() -> str:
+    """One line per call plus a run total, in tokens and dollars."""
+    if not USAGE:
+        return "api usage: no model calls this run"
+    lines, total = [], 0.0
+    for label, model, tin, tout in USAGE:
+        price_in, price_out = MODEL_PRICES.get(model, (0.0, 0.0))
+        cost = tin * price_in / 1e6 + tout * price_out / 1e6
+        total += cost
+        lines.append(
+            f"  {label} [{model}]: {tin:,} in / {tout:,} out (~${cost:.4f})"
+        )
+    unpriced = sorted({m for _, m, _, _ in USAGE if m not in MODEL_PRICES})
+    note = f" (no price on file for {', '.join(unpriced)})" if unpriced else ""
+    return (
+        f"api usage: {len(USAGE)} call(s), ~${total:.4f} this run{note}\n"
+        + "\n".join(lines)
+    )
 
 
 def note_degraded(section: str, exc: Exception) -> None:
@@ -147,7 +195,54 @@ def add_indicators(df: pd.DataFrame, ind: dict) -> pd.DataFrame:
         (df["Low"] - prev_close).abs(),
     ], axis=1).max(axis=1)
     df["ATR"] = true_range.ewm(alpha=1 / 14, min_periods=14, adjust=False).mean()
+    check_indicators(df, ind)
     return df
+
+
+# Bounds every indicator must satisfy on the last bar, as (low, high).
+# These exist because of the ^TNX bug: the 10-year was read on the wrong
+# scale for months without anyone noticing, since a tenth of a yield is
+# still a perfectly plausible yield. A number that is wrong but credible
+# survives review; one that is out of range does not.
+INDICATOR_BOUNDS = {"RSI": (0.0, 100.0), "ATR": (0.0, None), "Close": (0.0, None)}
+
+
+def check_indicators(df: pd.DataFrame, ind: dict) -> None:
+    """Warn when a computed indicator leaves the range it must occupy.
+
+    Deliberately a warning, not an exception: a single odd symbol should
+    not stop the briefing, and the scan reads hundreds of them. The point
+    is that such a value becomes visible in the log and the fallback banner
+    rather than flowing silently into a score, a stop or an email.
+    """
+    if df.empty:
+        return
+    last = df.iloc[-1]
+    problems = []
+    for col, (low, high) in INDICATOR_BOUNDS.items():
+        if col not in df:
+            continue
+        val = last.get(col)
+        if val is None or pd.isna(val):
+            continue  # warm-up gaps are expected, not anomalies
+        val = float(val)
+        if (low is not None and val < low) or (high is not None and val > high):
+            problems.append(f"{col}={val:,.4g} outside [{low}, {high}]")
+    # A moving average far from spot means the price series, not the mean,
+    # has changed scale — the shape an unadjusted split or a feed switching
+    # units takes. 10x is wide enough that no real trend trips it.
+    close = float(last["Close"]) if pd.notna(last.get("Close")) else None
+    if close and close > 0:
+        for n in (ind.get("sma_fast"), ind.get("sma_slow"), ind.get("sma_long")):
+            col = f"SMA{n}"
+            if not n or col not in df or pd.isna(last.get(col)):
+                continue
+            ratio = float(last[col]) / close
+            if not 0.1 < ratio < 10:
+                problems.append(f"{col} is {ratio:.1f}x the close")
+    if problems:
+        log("indicator sanity check: " + "; ".join(problems))
+        note_degraded("Indicator sanity", ValueError("; ".join(problems)))
 
 
 _SPY_CACHE: dict[str, pd.DataFrame] = {}
@@ -1067,8 +1162,14 @@ def llm_parse_trades(confirm_notes: list[dict]) -> list[dict]:
                 "Return an empty list if there are none."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
+            # Haiku 4.5 did no thinking unless asked; Haiku 5.5 thinks by
+            # default. Splitting a flattened table is not reasoning work, so
+            # it stays off — otherwise the cheaper model arrives with a
+            # thinking bill the old one never had.
+            thinking={"type": "disabled"},
             messages=[{"role": "user", "content": json.dumps(confirm_notes)}],
         )
+        note_usage("trade parsing", EXTRACT_MODEL, response.usage)
         return json.loads(next(b.text for b in response.content if b.type == "text"))["trades"]
     except Exception as exc:
         log(f"trade parsing failed — {exc}")
@@ -1251,8 +1352,10 @@ def llm_extract_guests(podcast_notes: list[dict]) -> list[str]:
                 "companies, and tickers. Return an empty list if none."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
+            thinking={"type": "disabled"},  # name extraction, not reasoning
             messages=[{"role": "user", "content": json.dumps(podcast_notes)}],
         )
+        note_usage("guest extraction", EXTRACT_MODEL, response.usage)
         guests = json.loads(next(b.text for b in response.content if b.type == "text"))["guests"]
         log("guests identified: " + (", ".join(guests) or "none"))
         return guests
@@ -1928,10 +2031,12 @@ def fable_report(system: str, payload: str, label: str, effort: str = "high") ->
             log(f"{label}: the model declined this request")
             return None
         text = "\n".join(b.text for b in response.content if b.type == "text").strip()
+        note_usage(label, ANALYST_MODEL, response.usage)
         usage = response.usage
+        price_in, price_out = MODEL_PRICES.get(ANALYST_MODEL, (0.0, 0.0))
         log(
             f"{label}: done — {usage.input_tokens:,} in / {usage.output_tokens:,} out "
-            f"(~${usage.input_tokens * 10 / 1e6 + usage.output_tokens * 50 / 1e6:.2f})"
+            f"(~${usage.input_tokens * price_in / 1e6 + usage.output_tokens * price_out / 1e6:.2f})"
         )
         return text or None
     except Exception as exc:
@@ -2585,8 +2690,10 @@ def llm_extract_podcast_ideas(podcast_notes: list[dict]) -> list[dict]:
                 "empty list if there are none."
             ),
             output_config={"format": {"type": "json_schema", "schema": schema}},
+            thinking={"type": "disabled"},  # lifting stated views, not judging them
             messages=[{"role": "user", "content": json.dumps(podcast_notes)}],
         )
+        note_usage("podcast idea extraction", EXTRACT_MODEL, response.usage)
         ideas = json.loads(next(b.text for b in response.content if b.type == "text"))["ideas"]
         log("podcast ideas extracted: " + (", ".join(i["ticker"] for i in ideas) or "none"))
         return ideas
@@ -2800,7 +2907,10 @@ def llm_commentary(
                 "These are levels to watch, not personalized financial advice. "
                 "Plain prose, no preamble, no hype words."
             ),
-            output_config={"format": {"type": "json_schema", "schema": schema}},
+            output_config={
+                "format": {"type": "json_schema", "schema": schema},
+                "effort": COMMENTARY_EFFORT,
+            },
             messages=[{
                 "role": "user",
                 "content": json.dumps({
@@ -2815,6 +2925,7 @@ def llm_commentary(
             }],
         )
         text = next(b.text for b in response.content if b.type == "text")
+        note_usage("commentary", COMMENTARY_MODEL, response.usage)
         data = json.loads(text)
         per_ticker = {
             item["ticker"]: {"commentary": item["commentary"], "actionable": item["actionable"]}
@@ -3576,6 +3687,7 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as exc:
                 log(f"ledger append failed — {exc}")
 
+    log(usage_summary())
     if failures:
         log(f"completed with failures: {', '.join(failures)}")
     return 0
