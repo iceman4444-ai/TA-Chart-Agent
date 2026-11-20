@@ -90,7 +90,17 @@ def note_usage(label: str, model: str, usage) -> None:
 def usage_summary() -> str:
     """One line per call plus a run total, in tokens and dollars."""
     if not USAGE:
-        return "api usage: no model calls this run"
+        # "No calls" and "every call failed" cost the same and mean very
+        # different things. The first version of this line reported both as
+        # "no model calls", which read like a quiet, cheap run on the day
+        # the credit balance ran out — precisely the misreporting this
+        # accounting exists to end.
+        if DEGRADED:
+            return (
+                f"api usage: no call succeeded — {len(DEGRADED)} section(s) fell "
+                "back to locally-computed text; see the reasons above"
+            )
+        return "api usage: no model calls were made this run"
     lines, total = [], 0.0
     for label, model, tin, tout in USAGE:
         price_in, price_out = MODEL_PRICES.get(model, (0.0, 0.0))
