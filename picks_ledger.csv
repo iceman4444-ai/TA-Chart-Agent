@@ -871,3 +871,7 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-23,control,TSN,4.3,62.95,61.27,afternoon,12.9,64,2.7,Risk-off,bullish
 2026-11-23,control,AIZ,3.8,319.05,309.76,afternoon,10.5,68,2.9,Risk-off,bullish
 2026-11-23,control,PNR,3.9,69.94,68.28,afternoon,17.6,66,2.4,Risk-off,bullish
+2026-11-23,pick,CLX,4.6,104.73,99.46,morning,16.8,64,5.0,Risk-off,bullish
+2026-11-23,pick,APP,4.5,348.29,335.29,morning,12.6,52,3.7,Risk-off,bullish
+2026-11-23,pick,COST,4.3,1102.15,1066.59,morning,11.8,70,3.2,Risk-off,bullish
+2026-11-23,control,HRL,4.3,23.54,23.26,morning,13.3,70,1.2,Risk-off,bullish
