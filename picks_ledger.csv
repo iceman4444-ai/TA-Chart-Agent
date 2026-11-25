@@ -883,3 +883,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-24,control,DGX,4.5,265.61,256.73,afternoon,8.7,69,3.3,Risk-off,bullish
 2026-11-24,control,PCG,4.2,14.22,13.42,afternoon,9.1,66,5.6,Risk-off,bullish
 2026-11-24,control,DOC,4.4,20.37,19.69,afternoon,4.8,61,3.3,Risk-off,bullish
+2026-11-25,pick,CMG,5.0,37.40,36.57,afternoon,14.7,66,2.2,Risk-off,bullish
+2026-11-25,pick,CHTR,4.8,147.27,137.22,afternoon,24.8,68,6.8,Risk-off,bullish
+2026-11-25,pick,BRO,4.7,78.43,72.90,afternoon,15.7,68,7.0,Risk-off,bullish
+2026-11-25,pick,CMCSA,4.7,25.73,25.09,afternoon,12.5,66,2.5,Risk-off,bullish
+2026-11-25,pick,DLTR,4.7,152.21,140.21,afternoon,19.7,65,7.9,Risk-off,bullish
+2026-11-25,control,WRB,4.5,79.34,76.74,afternoon,8.2,66,3.3,Risk-off,bullish
+2026-11-25,control,TTWO,4.7,227.34,224.90,afternoon,9.5,60,1.1,Risk-off,bullish
+2026-11-25,control,SHW,4.6,361.02,351.12,afternoon,7.9,61,2.7,Risk-off,bullish
