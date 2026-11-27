@@ -899,3 +899,11 @@ date,kind,ticker,score,close,support,slot,ext_50,rsi,stop_pct,regime,sentiment
 2026-11-26,control,BIIB,4.4,261.44,252.56,afternoon,9.1,60,3.4,Risk-off,bullish
 2026-11-26,control,WRB,4.5,79.34,76.74,afternoon,8.2,66,3.3,Risk-off,bullish
 2026-11-26,control,BAX,4.4,27.26,26.62,afternoon,9.7,63,2.3,Risk-off,bullish
+2026-11-27,pick,CSGP,4.9,34.92,34.01,afternoon,15.2,64,2.6,Risk-off,bullish
+2026-11-27,pick,REGN,4.8,992.14,944.56,afternoon,17.5,69,4.8,Risk-off,bullish
+2026-11-27,pick,CMCSA,4.7,26.08,25.82,afternoon,13.6,69,1.0,Risk-off,bullish
+2026-11-27,pick,TTWO,4.7,230.22,224.90,afternoon,10.6,61,2.3,Risk-off,bullish
+2026-11-27,pick,BRO,4.6,78.38,72.94,afternoon,15.2,68,6.9,Risk-off,bullish
+2026-11-27,control,ADP,4.5,319.43,305.68,afternoon,10.9,68,4.3,Risk-off,bullish
+2026-11-27,control,VZ,4.5,47.54,46.52,afternoon,4.8,64,2.1,Risk-off,bullish
+2026-11-27,control,GPN,4.6,97.04,93.88,afternoon,10.9,59,3.3,Risk-off,bullish
